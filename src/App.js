@@ -153,7 +153,7 @@ function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-10">
+      <div className="h-screen bg-background text-foreground flex items-center justify-center p-10">
         <div className="text-center max-w-md">
           <h3 className="text-lg font-semibold text-destructive mb-2">Error</h3>
           <p className="text-muted-foreground">{error}</p>
@@ -164,7 +164,7 @@ function App() {
 
   if (!config.source || !config.cardFields || !config.category) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-10">
+      <div className="h-screen bg-background text-foreground flex items-center justify-center p-10">
         <div className="text-center max-w-xl">
           <h3 className="text-lg font-semibold mb-2">Kanban Board Plugin</h3>
           <p className="text-muted-foreground">Please configure the data source, card fields, and category column.</p>
@@ -175,7 +175,7 @@ function App() {
 
   if (!sigmaData || !displayData) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-10">
+      <div className="h-screen bg-background text-foreground flex items-center justify-center p-10">
         <div className="text-center">
           <h3 className="text-lg font-semibold text-muted-foreground">Loading data...</h3>
         </div>
@@ -184,7 +184,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative">
+    <div className="h-screen bg-background text-foreground relative flex flex-col">
       {config.editMode && (
         <Button 
           className="absolute top-5 right-5 z-10 gap-2"
@@ -196,12 +196,14 @@ function App() {
         </Button>
       )}
       
-      <KanbanBoard 
-        data={displayData}
-        settings={settings}
-        enableDragDrop={config.enableDragDrop}
-        onCardMove={handleCardMove}
-      />
+      <div className="flex-1 overflow-hidden">
+        <KanbanBoard 
+          data={displayData}
+          settings={settings}
+          enableDragDrop={config.enableDragDrop}
+          onCardMove={handleCardMove}
+        />
+      </div>
       
       <Settings
         isOpen={showSettings}

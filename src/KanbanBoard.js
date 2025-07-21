@@ -143,59 +143,63 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
   };
 
   return (
-    <div className="flex-1 min-w-80 max-w-sm">
-      <div className="bg-gray-50 rounded-lg p-4 h-full">
-        <div className="flex items-center justify-between mb-4">
+    <div className="flex-1 min-w-80 max-w-sm h-full">
+      <div className="bg-gray-50 rounded-lg h-full flex flex-col">
+        {/* Sticky Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg sticky top-0 z-10">
           <h3 className="font-semibold text-lg text-gray-800">{board.name}</h3>
-          <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded-full text-sm font-medium">
+          <span className="bg-gray-200 text-gray-600 w-6 h-6 rounded-full text-sm font-medium flex items-center justify-center min-w-6">
             {cards.length}
           </span>
         </div>
         
-        <div
-          ref={setNodeRef}
-          className={`min-h-96 transition-colors duration-200 ${
-            isOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed rounded-md' : 'border-2 border-transparent'
-          }`}
-        >
-          {enableDragDrop ? (
-            <SortableContext
-              items={cards.map(card => card.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {cards.map((card) => (
-                <KanbanCard 
-                  key={card.id} 
-                  card={card} 
-                  isUpdating={updatingCardIds.includes(card.id)}
-                  fieldLayout={fieldLayout}
-                />
-              ))}
-            </SortableContext>
-          ) : (
-            cards.map((card) => (
-              <div key={card.id} className="bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm">
-                {updatingCardIds.includes(card.id) && (
-                  <div className="flex items-center justify-center mb-2">
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs text-blue-600 ml-2">Updating...</span>
-                  </div>
-                )}
-                
-                {/* Card Title */}
-                {card.title && (
-                  <div className="mb-3 pb-2 border-b border-gray-100">
-                    <h4 className="font-semibold text-gray-900 text-sm leading-tight">
-                      {card.title}
-                    </h4>
-                  </div>
-                )}
-                
-                {/* Card Fields */}
-                {Object.entries(card.fields).map(([fieldName, value]) => renderField(fieldName, value))}
-              </div>
-            ))
-          )}
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-hidden">
+          <div
+            ref={setNodeRef}
+            className={`h-full p-4 transition-colors duration-200 overflow-y-auto ${
+              isOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed rounded-md' : 'border-2 border-transparent'
+            }`}
+          >
+            {enableDragDrop ? (
+              <SortableContext
+                items={cards.map(card => card.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {cards.map((card) => (
+                  <KanbanCard 
+                    key={card.id} 
+                    card={card} 
+                    isUpdating={updatingCardIds.includes(card.id)}
+                    fieldLayout={fieldLayout}
+                  />
+                ))}
+              </SortableContext>
+            ) : (
+              cards.map((card) => (
+                <div key={card.id} className="bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm">
+                  {updatingCardIds.includes(card.id) && (
+                    <div className="flex items-center justify-center mb-2">
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs text-blue-600 ml-2">Updating...</span>
+                    </div>
+                  )}
+                  
+                  {/* Card Title */}
+                  {card.title && (
+                    <div className="mb-3 pb-2 border-b border-gray-100">
+                      <h4 className="font-semibold text-gray-900 text-sm leading-tight">
+                        {card.title}
+                      </h4>
+                    </div>
+                  )}
+                  
+                  {/* Card Fields */}
+                  {Object.entries(card.fields).map(([fieldName, value]) => renderField(fieldName, value))}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -282,7 +286,7 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove }) {
 
   if (!data || !data.boards || data.boards.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <h3 className="text-lg font-semibold text-gray-600 mb-2">No Data Available</h3>
           <p className="text-gray-500">Please check your data source configuration.</p>
@@ -292,8 +296,8 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove }) {
   }
 
   const kanbanContent = (
-    <div className="p-6 h-full overflow-x-auto">
-      <div className="flex gap-6 min-h-full">
+    <div className="h-full overflow-x-auto">
+      <div className="flex gap-6 h-full p-6">
         {data.boards.map((board) => {
           const boardCards = data.cards.filter(card => card.boardId === board.id);
           return (
