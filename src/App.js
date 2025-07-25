@@ -37,7 +37,7 @@ function App() {
 
   // Get variables and action triggers
   const [idVariable, setIdVariable] = useVariable(config.selectedID);
-  const [categoryVariable, setCategoryVariable] = useVariable(config.selectedCategory);
+  const [, setCategoryVariable] = useVariable(config.selectedCategory);
   const triggerUpdateRow = useActionTrigger(config.updateRow);
   const triggerOpenModal = useActionTrigger(config.openModal);
 
@@ -89,11 +89,11 @@ function App() {
     }
     
     // Try to find by rowId first (this is the actual task ID from the data)
-    let card = displayData.cards.find(card => card.rowId == actualCardId);
+    let card = displayData.cards.find(card => card.rowId === actualCardId);
     
     // If not found by rowId, try by internal id
     if (!card) {
-      card = displayData.cards.find(card => card.id == actualCardId);
+      card = displayData.cards.find(card => card.id === actualCardId);
     }
     
     // If still not found, try string comparison (in case of type mismatches)
