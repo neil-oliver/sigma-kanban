@@ -37,7 +37,10 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
   
   const columnValidation = validateRequiredColumns(elementColumns, requiredColumns);
   if (!columnValidation.isValid) {
-    console.warn('Missing required columns:', columnValidation.missingColumns);
+    // Only show warning if we have some data but missing required columns
+    if (sigmaData && Object.keys(sigmaData).length > 0) {
+      console.warn('Missing required columns:', columnValidation.missingColumns);
+    }
     return null;
   }
 
@@ -45,7 +48,10 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
   const categoryColumnKey = config.category;
   const categoryData = sigmaData[categoryColumnKey] || [];
   if (categoryData.length === 0) {
-    console.warn('No category column data found for key:', categoryColumnKey);
+    // Only show warning if we have data but missing category column
+    if (sigmaData && Object.keys(sigmaData).length > 0) {
+      console.warn('No category column data found for key:', categoryColumnKey);
+    }
     return null;
   }
 
@@ -85,7 +91,10 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
     if (sigmaData[fieldKey]) {
       cardFieldsData[fieldKey] = sigmaData[fieldKey];
     } else {
-      console.warn('Field not found in sigma data:', fieldKey);
+      // Only show warning if we have data but missing field
+      if (sigmaData && Object.keys(sigmaData).length > 0) {
+        console.warn('Field not found in sigma data:', fieldKey);
+      }
     }
   });
 
@@ -121,7 +130,20 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
       board = boards.find(b => b.name === String(categoryValue));
     }
     
-    if (!board) continue;
+    // In detail view mode, we want to include all cards even if they don't have a matching board
+    // For kanban view, we skip cards without a board
+    if (!board && settings.viewMode !== 'detail') continue;
+    
+    // If no board found in detail view, create a default board or assign to first available
+    if (!board && settings.viewMode === 'detail') {
+      if (boards.length > 0) {
+        board = boards[0]; // Assign to first board as fallback
+      } else {
+        // Create a default board if none exist
+        board = { id: 'board-default', name: 'Default' };
+        boards.push(board);
+      }
+    }
 
     // Extract field values for this card using column keys and names
     const fields = {};
@@ -192,18 +214,7 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
     });
   }
 
-  console.log('Processed kanban data:', {
-    boardsCount: boards.length,
-    cardsCount: cards.length,
-    elementColumnsKeys: Object.keys(elementColumns),
-    hasIdColumn: !!idData,
-    hasCardTitle: !!cardTitleData,
-    cardSorting: settings.cardSorting,
-    sortColumn: settings.sortColumn,
-    sortDirection: settings.sortDirection,
-    useCustomCategories: settings.useCustomCategories,
-    customCategoriesCount: settings.customCategories ? settings.customCategories.length : 0
-  });
+
 
   return {
     boards,

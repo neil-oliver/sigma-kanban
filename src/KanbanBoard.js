@@ -18,9 +18,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
+import CardModal from './CardModal';
 
 // Card component
-function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout = 'stacked' }) {
+function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout = 'stacked', onCardClick }) {
   const {
     attributes,
     listeners,
@@ -69,13 +70,27 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
     }
   };
 
+  const handleCardClick = (e) => {
+    // Prevent click when dragging
+    if (isSortableDragging) return;
+    
+    // Prevent click when updating
+    if (isUpdating) return;
+    
+    // Call the click handler
+    if (onCardClick) {
+      onCardClick(card);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing ${
+      onClick={handleCardClick}
+      className={`bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
         isDragging ? 'rotate-5 scale-105' : ''
       } ${isUpdating ? 'border-blue-300 bg-blue-50' : ''}`}
     >
@@ -102,7 +117,7 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
 }
 
 // Board column component
-function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fieldLayout = 'stacked' }) {
+function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fieldLayout = 'stacked', onCardClick }) {
   const {
     setNodeRef,
     isOver,
@@ -172,12 +187,17 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
                     card={card} 
                     isUpdating={updatingCardIds.includes(card.id)}
                     fieldLayout={fieldLayout}
+                    onCardClick={onCardClick}
                   />
                 ))}
               </SortableContext>
             ) : (
               cards.map((card) => (
-                <div key={card.id} className="bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm">
+                <div 
+                  key={card.id} 
+                  className="bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => onCardClick && onCardClick(card)}
+                >
                   {updatingCardIds.includes(card.id) && (
                     <div className="flex items-center justify-center mb-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -225,8 +245,10 @@ function customCollisionDetection(args) {
 }
 
 // Main Kanban Board component
-function KanbanBoard({ data, settings, enableDragDrop, onCardMove }) {
+function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick }) {
   const [activeCard, setActiveCard] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -284,6 +306,22 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove }) {
     }
   };
 
+  const handleCardClick = (card) => {
+    if (onCardClick) {
+      // Use external card click handler (for external modal)
+      onCardClick(card);
+    } else {
+      // Use internal modal
+      setSelectedCard(card);
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedCard(null);
+  };
+
   if (!data || !data.boards || data.boards.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -308,6 +346,7 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove }) {
               enableDragDrop={enableDragDrop}
               updatingCardIds={data.updatingCardIds || []}
               fieldLayout={settings?.fieldLayout || 'stacked'}
+              onCardClick={handleCardClick}
             />
           );
         })}
@@ -317,21 +356,43 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove }) {
 
   if (enableDragDrop) {
     return (
-      <DndContext
-        sensors={sensors}
-        collisionDetection={customCollisionDetection}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        {kanbanContent}
-        <DragOverlay>
-          {activeCard ? <KanbanCard card={activeCard} isDragging /> : null}
-        </DragOverlay>
-      </DndContext>
+      <>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={customCollisionDetection}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          {kanbanContent}
+          <DragOverlay>
+            {activeCard ? <KanbanCard card={activeCard} isDragging /> : null}
+          </DragOverlay>
+        </DndContext>
+        {!onCardClick && (
+          <CardModal
+            isOpen={isModalOpen}
+            onClose={handleModalClose}
+            card={selectedCard}
+            fieldLayout={settings?.fieldLayout || 'stacked'}
+          />
+        )}
+      </>
     );
   }
 
-  return kanbanContent;
+  return (
+    <>
+      {kanbanContent}
+      {!onCardClick && (
+        <CardModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          card={selectedCard}
+          fieldLayout={settings?.fieldLayout || 'stacked'}
+        />
+      )}
+    </>
+  );
 }
 
 export default KanbanBoard; 

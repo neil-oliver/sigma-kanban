@@ -10,6 +10,8 @@ import { getColumnName } from './utils/columnHelper';
 
 // Default settings for kanban board
 export const DEFAULT_SETTINGS = {
+  viewMode: 'kanban', // 'kanban' or 'detail' - determines if plugin shows kanban board or detail view
+  modalPreference: 'internal', // 'internal' or 'external' - determines modal behavior in kanban view
   cardLayout: 'comfortable', // 'comfortable', 'compact'
   fieldLayout: 'stacked', // 'stacked' (title above value), 'inline' (title and value side by side)
   showCardCounts: true, // Show number of cards in each board
@@ -106,6 +108,42 @@ function Settings({
           </DialogHeader>
           
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="viewMode">View Mode</Label>
+              <Select
+                value={tempSettings.viewMode}
+                onValueChange={(value) => setTempSettings({ ...tempSettings, viewMode: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select view mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kanban">Kanban Board</SelectItem>
+                  <SelectItem value="detail">Detail View</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">Kanban shows the board, Detail shows selected card details</p>
+            </div>
+
+            {tempSettings.viewMode === 'kanban' && (
+              <div className="space-y-2">
+                <Label htmlFor="modalPreference">Modal Preference</Label>
+                <Select
+                  value={tempSettings.modalPreference}
+                  onValueChange={(value) => setTempSettings({ ...tempSettings, modalPreference: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select modal preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal">Internal Modal</SelectItem>
+                    <SelectItem value="external">External Detail View</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">Internal opens modal in same plugin, External triggers action for separate detail view plugin</p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="cardLayout">Card Layout</Label>
               <Select

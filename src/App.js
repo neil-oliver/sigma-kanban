@@ -7,6 +7,7 @@ import Settings, { DEFAULT_SETTINGS } from './Settings';
 import { processKanbanData } from './utils/dataProcessor';
 import { debugCardMove } from './utils/columnHelper';
 import KanbanBoard from './KanbanBoard';
+import CardDetails from './CardDetails';
 import './App.css';
 
 // Configure the plugin editor panel
@@ -21,7 +22,8 @@ client.config.configureEditorPanel([
   { name: 'enableDragDrop', type: 'toggle', label: 'Enable Drag & Drop (Input Table Only)' },
   { name: 'config', type: 'text', label: 'Settings Config (JSON)', defaultValue:"{}"},
   { name: 'editMode', type: 'toggle', label: 'Edit Mode' },
-  { name: 'updateRow', type: 'action-trigger', label: 'Update Row' }
+  { name: 'updateRow', type: 'action-trigger', label: 'Update Row' },
+  { name: 'openModal', type: 'action-trigger', label: 'Open Modal (External)' }
 ]);
 
 function App() {
@@ -33,20 +35,13 @@ function App() {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [optimisticData, setOptimisticData] = useState(null);
 
-  // Get variables and action trigger
+  // Get variables and action triggers
   const [idVariable, setIdVariable] = useVariable(config.selectedID);
   const [categoryVariable, setCategoryVariable] = useVariable(config.selectedCategory);
   const triggerUpdateRow = useActionTrigger(config.updateRow);
+  const triggerOpenModal = useActionTrigger(config.openModal);
 
-  // Debug: Log element columns structure
-  console.log('Element Columns:', elementColumns);
-  
-  // Debug: Log current variable values
-  console.log('Current variables:', {
-    idVariable,
-    categoryVariable,
-    hasUpdateRowTrigger: !!triggerUpdateRow
-  });
+
 
   // Parse config JSON and load settings
   useEffect(() => {
@@ -65,17 +60,61 @@ function App() {
   }, [config.config]);
 
   // Process kanban data with column information
-  const kanbanData = processKanbanData(sigmaData, config, settings, elementColumns);
+  // Only process if we have the minimum required configuration
+  const kanbanData = (config.source && config.cardFields && config.category) 
+    ? processKanbanData(sigmaData, config, settings, elementColumns)
+    : null;
   
   // Use optimistic data if available, otherwise use processed data
   const displayData = optimisticData || kanbanData;
+  
+  // In detail view mode, if we don't have processed data yet, we might need to process it differently
+  // or wait for the data to be available
+  
 
-  // Clear optimistic data when new data arrives
+
+  // Find selected card based on selectedID variable
+  const findCardById = (cardId) => {
+    if (!displayData || !displayData.cards || !cardId) return null;
+    
+    // Extract the actual value from the Sigma variable object
+    let actualCardId = cardId;
+    if (cardId && typeof cardId === 'object') {
+      // Handle different Sigma variable object structures
+      if (cardId.value !== undefined) {
+        actualCardId = cardId.value;
+      } else if (cardId.defaultValue && cardId.defaultValue.value !== undefined) {
+        actualCardId = cardId.defaultValue.value;
+      }
+    }
+    
+    // Try to find by rowId first (this is the actual task ID from the data)
+    let card = displayData.cards.find(card => card.rowId == actualCardId);
+    
+    // If not found by rowId, try by internal id
+    if (!card) {
+      card = displayData.cards.find(card => card.id == actualCardId);
+    }
+    
+    // If still not found, try string comparison (in case of type mismatches)
+    if (!card) {
+      card = displayData.cards.find(card => 
+        String(card.rowId) === String(actualCardId) || 
+        String(card.id) === String(actualCardId)
+      );
+    }
+    
+    return card;
+  };
+
+  const selectedCard = findCardById(idVariable);
+
+  // Clear optimistic data when new data arrives (but not in detail view mode)
   useEffect(() => {
-    if (sigmaData && optimisticData) {
+    if (sigmaData && optimisticData && settings.viewMode !== 'detail') {
       setOptimisticData(null);
     }
-  }, [sigmaData]);
+  }, [sigmaData, settings.viewMode]);
 
   // Clear updating state after a timeout (fallback)
   useEffect(() => {
@@ -151,6 +190,15 @@ function App() {
     }
   };
 
+  const handleCardClick = (card) => {
+    if (settings.modalPreference === 'external') {
+      // Set the ID variable and trigger the external modal action
+      setIdVariable(card.rowId);
+      triggerOpenModal();
+    }
+    // For internal modal, KanbanBoard handles the modal state directly
+  };
+
   if (error) {
     return (
       <div className="h-screen bg-background text-foreground flex items-center justify-center p-10">
@@ -183,6 +231,43 @@ function App() {
     );
   }
 
+  // Render based on view mode
+  if (settings.viewMode === 'detail') {
+    // Detail view mode - show only card details
+    return (
+      <div className="h-screen bg-background text-foreground relative flex flex-col">
+        {config.editMode && (
+          <Button 
+            className="absolute top-5 right-5 z-10 gap-2"
+            onClick={() => setShowSettings(true)}
+            size="sm"
+          >
+            <SettingsIcon className="h-4 w-4" />
+            Settings
+          </Button>
+        )}
+        
+        <div className="flex-1 overflow-hidden">
+          <CardDetails 
+            card={selectedCard} 
+            fieldLayout={settings?.fieldLayout || 'stacked'} 
+          />
+        </div>
+        
+        <Settings
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          currentSettings={settings}
+          onSave={handleSettingsSave}
+          client={client}
+          elementColumns={elementColumns}
+          config={config}
+        />
+      </div>
+    );
+  }
+
+  // Kanban view mode (default)
   return (
     <div className="h-screen bg-background text-foreground relative flex flex-col">
       {config.editMode && (
@@ -202,6 +287,7 @@ function App() {
           settings={settings}
           enableDragDrop={config.enableDragDrop}
           onCardMove={handleCardMove}
+          onCardClick={settings.modalPreference === 'external' ? handleCardClick : undefined}
         />
       </div>
       

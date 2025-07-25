@@ -12,6 +12,8 @@ A flexible Sigma Computing plugin that creates interactive kanban boards from yo
 - **Persistent Settings**: JSON-based configuration that saves with your workbook
 - **Real-time Updates**: Changes sync back to Sigma when using input tables
 - **Column Information Access**: Uses `getElementColumns` to access proper column names and metadata
+- **Dual View Modes**: Kanban board view and dedicated detail view
+- **Flexible Modal System**: Internal modal or external detail view plugin integration
 
 ## Quick Start
 
@@ -32,6 +34,8 @@ A flexible Sigma Computing plugin that creates interactive kanban boards from yo
 1. Enable **Edit Mode** in the plugin config
 2. Click the **Settings** button that appears
 3. Configure appearance and behavior:
+   - **View Mode**: Choose between Kanban board or detail view
+   - **Modal Preference**: Internal modal or external detail view integration
    - **Card Layout**: Comfortable vs compact spacing
    - **Board Ordering**: Data order, alphabetical, or custom
    - **Visual Options**: Card counts, animations, empty board highlighting
@@ -99,9 +103,10 @@ function MyComponent() {
 - **Category Column**: Column containing board/status values (e.g., "To Do", "In Progress", "Done")
 
 ### Optional Fields
-- **Selected ID Variable**: Variable to receive the row ID of moved cards
+- **Selected ID Variable**: Variable to receive the row ID of moved cards or selected cards
 - **Selected Category Variable**: Variable to receive the target board name
 - **Update Row**: Action trigger to handle data updates
+- **Open Modal (External)**: Action trigger for external detail view integration
 - **Enable Drag & Drop**: Boolean toggle for interactive card movement (requires input table)
 - **Edit Mode**: Boolean toggle to show settings interface
 - **Settings Config**: JSON configuration (auto-managed by settings UI)
@@ -232,6 +237,8 @@ Result: All variations are mapped to your standardized categories
 - **When disabled**: Clean view for end users
 
 ### Settings Options
+- **View Mode**: Choose between Kanban board or detail view
+- **Modal Preference**: Select internal modal or external detail view (Kanban mode only)
 - **Card Layout**: Choose spacing and visual density
 - **Field Layout**: Choose how field labels and values are arranged
   - **Stacked**: Field labels above values (traditional layout)
@@ -304,6 +311,58 @@ The plugin provides comprehensive debugging information in the browser console:
 - Column information
 - Action trigger status
 
+## View Modes & Modal Integration
+
+### View Modes
+
+The plugin supports two distinct view modes to suit different use cases:
+
+#### Kanban Board View (Default)
+- Traditional kanban board layout with cards organized by status
+- Interactive drag & drop functionality
+- Card selection opens modal or triggers external detail view
+- Ideal for workflow management and task tracking
+
+#### Detail View
+- Dedicated view showing detailed information for a selected card
+- Automatically watches the `selectedID` variable for changes
+- Shows "No Card Selected" state when no card is selected
+- Perfect for focused task review and detailed information display
+
+### Modal Preferences
+
+When using Kanban Board view, you can choose how card details are displayed:
+
+#### Internal Modal
+- Opens card details in a modal dialog within the same plugin
+- Traditional behavior - no external dependencies
+- Good for quick card review without leaving the board view
+
+#### External Detail View
+- Sets the `selectedID` variable and triggers the `openModal` action
+- Integrates with a separate detail view plugin instance
+- Enables dual-plugin setups for enhanced user experience
+
+### Dual Plugin Setup
+
+Create a powerful dual-plugin experience:
+
+1. **Main Plugin (Kanban Board)**:
+   - View Mode: "Kanban Board"
+   - Modal Preference: "External Detail View"
+   - Configure `openModal` action trigger
+
+2. **Detail Plugin (Detail View)**:
+   - View Mode: "Detail View"
+   - Connect to same data source and variables
+   - Automatically displays details for selected cards
+
+#### Benefits of Dual Plugin Setup
+- **Enhanced UX**: Dedicated space for detailed information
+- **Flexible Layout**: Position plugins anywhere in your workbook
+- **Shared Data**: Both plugins stay synchronized
+- **Scalable**: Add more detail views or specialized views as needed
+
 ## Use Cases
 
 - **Project Management**: Track tasks across workflow stages
@@ -312,6 +371,8 @@ The plugin provides comprehensive debugging information in the browser console:
 - **Content Creation**: Track content through editorial stages
 - **Recruitment**: Move candidates through hiring process
 - **Support Tickets**: Track ticket resolution progress
+- **Dual-View Dashboards**: Kanban board with dedicated detail panels
+- **Multi-User Workflows**: Separate views for different user roles
 
 ## Development
 
