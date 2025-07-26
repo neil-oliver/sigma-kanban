@@ -5,20 +5,66 @@
  */
 
 /**
- * Check if a URL points to an image based on file extension
+ * Check if a URL points to an image based on file extension and common image hosting domains
  * @param {string} url - The URL to check
  * @returns {boolean} - True if the URL appears to be an image
  */
 export const isImageUrl = (url) => {
-  if (!url || typeof url !== 'string') return false;
+  if (!url || typeof url !== 'string') {
+    console.log('isImageUrl: Invalid URL input:', url);
+    return false;
+  }
   
   // Remove query parameters and fragments for extension checking
   const cleanUrl = url.split('?')[0].split('#')[0];
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'];
   
-  return imageExtensions.some(ext => 
+  // Check for file extensions
+  const hasImageExtension = imageExtensions.some(ext => 
     cleanUrl.toLowerCase().endsWith(ext)
   );
+  
+  // Check for common image hosting domains
+  const imageHostingDomains = [
+    'avatars.slack-edge.com',
+    'avatars.githubusercontent.com',
+    'lh3.googleusercontent.com',
+    'graph.facebook.com',
+    'platform-lookaside.fbsbx.com',
+    'pbs.twimg.com',
+    'images.unsplash.com',
+    'cdn.discordapp.com',
+    'media.discordapp.net',
+    'i.imgur.com',
+    'images.pexels.com',
+    'pixabay.com',
+    'flickr.com',
+    '500px.com'
+  ];
+  
+  let isImageHosting = false;
+  try {
+    const urlObj = new URL(url);
+    isImageHosting = imageHostingDomains.some(domain => 
+      urlObj.hostname.includes(domain)
+    );
+  } catch (e) {
+    // URL parsing failed, continue with extension check only
+  }
+  
+  const isImage = hasImageExtension || isImageHosting;
+  
+  console.log('isImageUrl debug:', {
+    originalUrl: url,
+    cleanUrl: cleanUrl,
+    hasImageExtension: hasImageExtension,
+    isImageHosting: isImageHosting,
+    isImage: isImage,
+    matchingExtension: imageExtensions.find(ext => cleanUrl.toLowerCase().endsWith(ext)),
+    matchingDomain: imageHostingDomains.find(domain => url.includes(domain))
+  });
+  
+  return isImage;
 };
 
 /**
@@ -44,6 +90,26 @@ export const isValidUrl = (url) => {
     }
     return false;
   }
+};
+
+/**
+ * Normalize URL by adding protocol if missing
+ * @param {string} url - The URL to normalize
+ * @returns {string} - Normalized URL with protocol
+ */
+export const normalizeUrl = (url) => {
+  if (!url || typeof url !== 'string') return url;
+  
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Add https:// if it looks like a domain
+  if (url.includes('.') && !url.includes(' ')) {
+    return `https://${url}`;
+  }
+  
+  return url;
 };
 
 /**
@@ -217,6 +283,7 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
   } = options;
 
   if (!elementColumns || !elementColumns[columnKey]) {
+    console.log('renderStyledField: No column info found for key:', columnKey);
     return {
       component: 'span',
       props: { children: value },
@@ -226,6 +293,15 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
 
   const column = elementColumns[columnKey];
   
+  console.log('renderStyledField debug:', {
+    value: value,
+    columnKey: columnKey,
+    columnType: column.columnType,
+    columnName: column.name,
+    isImageUrl: isImageUrl(value),
+    isValidUrl: isValidUrl(value)
+  });
+  
   // Only show icons for special types, not text and numbers
   const shouldShowIcon = showIcon && ['boolean', 'datetime', 'link', 'variant', 'error'].includes(column.columnType);
   const typeStyles = getColumnTypeStyles(column.columnType, column.format);
@@ -233,7 +309,9 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
   // Handle different column types
   switch (column.columnType) {
     case 'link':
+      console.log('renderStyledField: Processing link type with value:', value);
       if (isImageUrl(value)) {
+        console.log('renderStyledField: Detected as image URL, rendering image component');
         return {
           component: 'div',
           props: {
@@ -251,7 +329,7 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
                   children: {
                     type: 'AvatarImage',
                     props: {
-                      src: value,
+                      src: normalizeUrl(value),
                       alt: 'Field image',
                       style: { 
                         maxWidth: maxImageWidth, 
@@ -323,6 +401,52 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
       };
 
     default:
+      // Check if this is a text field that contains an image URL
+      if (column.columnType === 'text' && isImageUrl(value)) {
+        console.log('renderStyledField: Text field contains image URL, rendering as image');
+        return {
+          component: 'div',
+          props: {
+            className: 'flex items-center gap-2',
+            children: [
+              shouldShowIcon && {
+                type: 'LucideIcon',
+                name: 'Image',
+                props: { className: 'h-4 w-4 text-muted-foreground' }
+              },
+              {
+                type: 'Avatar',
+                props: {
+                  className: 'h-8 w-8',
+                  children: {
+                    type: 'AvatarImage',
+                    props: {
+                      src: normalizeUrl(value),
+                      alt: 'Field image',
+                      style: { 
+                        maxWidth: maxImageWidth, 
+                        maxHeight: maxImageHeight,
+                        cursor: enableImageModal ? 'pointer' : 'default'
+                      }
+                    }
+                  },
+                  fallback: {
+                    type: 'AvatarFallback',
+                    props: {
+                      children: {
+                        type: 'LucideIcon',
+                        name: 'Image',
+                        props: { className: 'h-4 w-4' }
+                      }
+                    }
+                  }
+                }
+              }
+            ].filter(Boolean)
+          }
+        };
+      }
+      
       return {
         component: 'div',
         props: {
