@@ -248,7 +248,7 @@ function App() {
           </Button>
         )}
         
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <CardDetails 
             card={selectedCard} 
             fieldLayout={settings?.fieldLayout || 'stacked'}
