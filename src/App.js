@@ -315,14 +315,15 @@ function App() {
         )}
         
         <div className="flex-1 overflow-y-auto">
-          <CardDetails 
-            card={selectedCard} 
-            fieldLayout={settings?.fieldLayout || 'stacked'}
-            elementColumns={elementColumns}
-            config={config}
-            onUpdateDates={handleUpdateDates}
-            showDates={settings?.showDates ?? false}
-          />
+                  <CardDetails 
+          card={selectedCard} 
+          fieldLayout={settings?.fieldLayout || 'stacked'}
+          elementColumns={elementColumns}
+          config={config}
+          onUpdateDates={handleUpdateDates}
+          isModal={true}
+          showDates={settings?.showDates ?? false}
+        />
         </div>
         
         <Settings
