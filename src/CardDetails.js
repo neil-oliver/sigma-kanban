@@ -98,31 +98,38 @@ function CardDetails({ card, fieldLayout = 'stacked', elementColumns }) {
   };
 
   return (
-    <div className="p-6">
-      {/* Card Title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {card.title || 'Card Details'}
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Detailed information for this card
-        </p>
-      </div>
-      
-      {/* Card Fields */}
-      <div className="space-y-4">
-        {Object.entries(card.fields).map(([fieldName, value]) => renderField(fieldName, value))}
-      </div>
-      
-      {/* Additional Card Information */}
-      {card.rowId && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="text-sm">
-            <span className="font-medium text-gray-600">Task ID:</span>
-            <span className="ml-2 text-gray-900">{card.rowId}</span>
-          </div>
+    <div className="flex flex-col h-full">
+      {/* Sticky Header */}
+      <div className="sticky top-0 bg-background border-b border-gray-200 z-10">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {card.title || 'Card Details'}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Detailed information for this card
+          </p>
         </div>
-      )}
+      </div>
+      
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          {/* Card Fields */}
+          <div className="space-y-4">
+            {Object.entries(card.fields).map(([fieldName, value]) => renderField(fieldName, value))}
+          </div>
+          
+          {/* Additional Card Information */}
+          {card.rowId && (
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="text-sm">
+                <span className="font-medium text-gray-600">Task ID:</span>
+                <span className="ml-2 text-gray-900">{card.rowId}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
