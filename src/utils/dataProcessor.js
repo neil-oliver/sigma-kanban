@@ -87,6 +87,14 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
   const cardFieldsData = {};
   const fieldNames = Array.isArray(config.cardFields) ? config.cardFields : [config.cardFields];
   
+  // Include date columns if they're configured (show as regular fields when not editable)
+  if (config.startDate) {
+    fieldNames.push(config.startDate);
+  }
+  if (config.endDate) {
+    fieldNames.push(config.endDate);
+  }
+  
   fieldNames.forEach(fieldKey => {
     if (sigmaData[fieldKey]) {
       cardFieldsData[fieldKey] = sigmaData[fieldKey];

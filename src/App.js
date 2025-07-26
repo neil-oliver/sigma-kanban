@@ -10,21 +10,41 @@ import KanbanBoard from './KanbanBoard';
 import CardDetails from './CardDetails';
 import './App.css';
 
-// Configure the plugin editor panel
-client.config.configureEditorPanel([
-  { name: 'source', type: 'element' },
-  { name: 'ID', type: 'column', source: 'source', allowMultiple: false, label: 'ID Column' },
-  { name: 'cardTitle', type: 'column', source: 'source', allowMultiple: true, label: 'Card Title' },
-  { name: 'cardFields', type: 'column', source: 'source', allowMultiple: true, label: 'Card Fields' },
-  { name: 'category', type: 'column', source: 'source', allowMultiple: false, label: 'Category Column' },
-  { name: 'selectedID', type: 'variable', label: 'Selected ID Variable' },
-  { name: 'selectedCategory', type: 'variable', label: 'Selected Category Variable' },
-  { name: 'enableDragDrop', type: 'toggle', label: 'Enable Drag & Drop (Input Table Only)' },
-  { name: 'config', type: 'text', label: 'Settings Config (JSON)', defaultValue:"{}"},
-  { name: 'editMode', type: 'toggle', label: 'Edit Mode' },
-  { name: 'updateRow', type: 'action-trigger', label: 'Update Row' },
-  { name: 'openModal', type: 'action-trigger', label: 'Open Modal (External)' }
-]);
+// Function to build configuration array based on enableWriteback setting
+const buildEditorPanelConfig = (enableWriteback = false) => {
+  const baseConfig = [
+    { name: 'source', type: 'element' },
+    { name: 'ID', type: 'column', source: 'source', allowMultiple: false, label: 'ID Column' },
+    { name: 'cardTitle', type: 'column', source: 'source', allowMultiple: true, label: 'Card Title' },
+    { name: 'cardFields', type: 'column', source: 'source', allowMultiple: true, label: 'Card Fields' },
+    { name: 'category', type: 'column', source: 'source', allowMultiple: false, label: 'Category Column' },
+    { name: 'startDate', type: 'column', source: 'source', allowMultiple: false, label: 'Start Date Column (Optional)' },
+    { name: 'endDate', type: 'column', source: 'source', allowMultiple: false, label: 'End Date Column (Optional)' },
+    { name: 'enableWriteback', type: 'toggle', label: 'Enable Writeback' },
+    { name: 'config', type: 'text', label: 'Settings Config (JSON)', defaultValue:"{}"},
+    { name: 'editMode', type: 'toggle', label: 'Edit Mode' },
+    { name: 'openModal', type: 'action-trigger', label: 'Open Modal (External)' }
+  ];
+
+  // Add drag-and-drop related items only when enableWriteback is true
+  if (enableWriteback) {
+    baseConfig.splice(7, 0, // Insert after the date columns but before enableWriteback
+      { name: 'selectedID', type: 'variable', label: 'Selected ID Variable' },
+      { name: 'selectedCategory', type: 'variable', label: 'Selected Category Variable' },
+      { name: 'selectedStartDate', type: 'variable', label: 'Selected Start Date Variable' },
+      { name: 'selectedEndDate', type: 'variable', label: 'Selected End Date Variable' }
+    );
+    baseConfig.push(
+      { name: 'updateCategory', type: 'action-trigger', label: 'Update Category' },
+      { name: 'updateDates', type: 'action-trigger', label: 'Update Dates' }
+    );
+  }
+
+  return baseConfig;
+};
+
+// Initial configuration setup
+client.config.configureEditorPanel(buildEditorPanelConfig());
 
 function App() {
   const config = useConfig();
@@ -38,10 +58,17 @@ function App() {
   // Get variables and action triggers
   const [idVariable, setIdVariable] = useVariable(config.selectedID);
   const [, setCategoryVariable] = useVariable(config.selectedCategory);
-  const triggerUpdateRow = useActionTrigger(config.updateRow);
+  const [, setStartDateVariable] = useVariable(config.selectedStartDate);
+  const [, setEndDateVariable] = useVariable(config.selectedEndDate);
+  const triggerUpdateCategory = useActionTrigger(config.updateCategory);
+  const triggerUpdateDates = useActionTrigger(config.updateDates);
   const triggerOpenModal = useActionTrigger(config.openModal);
 
-
+  // Reconfigure editor panel when enableWriteback changes
+  useEffect(() => {
+    const newConfig = buildEditorPanelConfig(config.enableWriteback);
+    client.config.configureEditorPanel(newConfig);
+  }, [config.enableWriteback]);
 
   // Parse config JSON and load settings
   useEffect(() => {
@@ -133,7 +160,7 @@ function App() {
   };
 
   const handleCardMove = async (cardId, fromBoard, toBoard) => {
-    if (!config.enableDragDrop) return;
+    if (!config.enableWriteback) return;
     
     try {
       console.log('Card move triggered:', { cardId, fromBoard, toBoard });
@@ -175,8 +202,8 @@ function App() {
       // Set the category variable with the selected card's board column value
       setCategoryVariable(toBoard);
       
-      // Trigger the updateRow action
-      triggerUpdateRow();
+      // Trigger the updateCategory action
+      triggerUpdateCategory();
       
       console.log('Variables set and action triggered:', {
         id: actualRowId,
@@ -187,6 +214,126 @@ function App() {
       setError(`Failed to update card: ${error.message}`);
       // Clear optimistic data on error
       setOptimisticData(null);
+    }
+  };
+
+  const handleUpdateDates = async (rowId, startDate, endDate) => {
+    if (!config.enableWriteback) return;
+    
+    try {
+      console.log('Date update triggered:', { rowId, startDate, endDate });
+      
+      // Normalize the new dates
+      let normalizedStartDate = null;
+      let normalizedEndDate = null;
+
+      console.log('Date normalization input:', { startDate, endDate, startDateType: typeof startDate, endDateType: typeof endDate });
+
+      // Handle start date normalization
+      if (startDate instanceof Date) {
+        normalizedStartDate = startDate;
+      } else if (typeof startDate === 'string') {
+        // Handle timestamp strings (e.g., "1750723200000")
+        if (/^\d+$/.test(startDate)) {
+          const timestamp = parseInt(startDate, 10);
+          normalizedStartDate = new Date(timestamp);
+        } else {
+          normalizedStartDate = new Date(startDate);
+        }
+      } else if (Array.isArray(startDate) && startDate.length > 0) {
+        const firstDate = startDate[0];
+        if (firstDate instanceof Date) {
+          normalizedStartDate = firstDate;
+        } else if (typeof firstDate === 'string' && /^\d+$/.test(firstDate)) {
+          const timestamp = parseInt(firstDate, 10);
+          normalizedStartDate = new Date(timestamp);
+        } else {
+          normalizedStartDate = new Date(String(firstDate));
+        }
+      }
+
+      // Handle end date normalization
+      if (endDate instanceof Date) {
+        normalizedEndDate = endDate;
+      } else if (typeof endDate === 'string') {
+        // Handle timestamp strings (e.g., "1750723200000")
+        if (/^\d+$/.test(endDate)) {
+          const timestamp = parseInt(endDate, 10);
+          normalizedEndDate = new Date(timestamp);
+        } else {
+          normalizedEndDate = new Date(endDate);
+        }
+      } else if (Array.isArray(endDate) && endDate.length > 0) {
+        const firstDate = endDate[0];
+        if (firstDate instanceof Date) {
+          normalizedEndDate = firstDate;
+        } else if (typeof firstDate === 'string' && /^\d+$/.test(firstDate)) {
+          const timestamp = parseInt(firstDate, 10);
+          normalizedEndDate = new Date(timestamp);
+        } else {
+          normalizedEndDate = new Date(String(firstDate));
+        }
+      }
+
+      console.log('Date normalization result:', { 
+        normalizedStartDate, 
+        normalizedEndDate,
+        startDateValid: normalizedStartDate && !isNaN(normalizedStartDate.getTime()),
+        endDateValid: normalizedEndDate && !isNaN(normalizedEndDate.getTime())
+      });
+
+      // Set the ID variable with the selected card's row ID
+      if (config.selectedID && rowId !== undefined) {
+        try {
+          await setIdVariable(rowId);
+        } catch (error) {
+          console.error('Error setting ID variable:', error);
+        }
+      }
+      
+      // Handle start date - set as YYYY-MM-DD string format in local timezone
+      if (config.selectedStartDate && normalizedStartDate && !isNaN(normalizedStartDate.getTime())) {
+        try {
+          // Format as YYYY-MM-DD in local timezone
+          const year = normalizedStartDate.getFullYear();
+          const month = String(normalizedStartDate.getMonth() + 1).padStart(2, '0');
+          const day = String(normalizedStartDate.getDate()).padStart(2, '0');
+          const startDateFormatted = `${year}-${month}-${day}`;
+          await setStartDateVariable(startDateFormatted);
+        } catch (error) {
+          console.error('Error setting start date variable:', error);
+        }
+      }
+      
+      // Handle end date - set as YYYY-MM-DD string format in local timezone
+      if (config.selectedEndDate && normalizedEndDate && !isNaN(normalizedEndDate.getTime())) {
+        try {
+          // Format as YYYY-MM-DD in local timezone
+          const year = normalizedEndDate.getFullYear();
+          const month = String(normalizedEndDate.getMonth() + 1).padStart(2, '0');
+          const day = String(normalizedEndDate.getDate()).padStart(2, '0');
+          const endDateFormatted = `${year}-${month}-${day}`;
+          await setEndDateVariable(endDateFormatted);
+        } catch (error) {
+          console.error('Error setting end date variable:', error);
+        }
+      }
+      
+      // Trigger the updateDates action
+      if (triggerUpdateDates) {
+        await triggerUpdateDates();
+      }
+      
+      console.log('Date variables set and action triggered:', {
+        id: rowId,
+        startDate: normalizedStartDate && !isNaN(normalizedStartDate.getTime()) ? 
+          `${normalizedStartDate.getFullYear()}-${String(normalizedStartDate.getMonth() + 1).padStart(2, '0')}-${String(normalizedStartDate.getDate()).padStart(2, '0')}` : null,
+        endDate: normalizedEndDate && !isNaN(normalizedEndDate.getTime()) ? 
+          `${normalizedEndDate.getFullYear()}-${String(normalizedEndDate.getMonth() + 1).padStart(2, '0')}-${String(normalizedEndDate.getDate()).padStart(2, '0')}` : null
+      });
+    } catch (error) {
+      console.error('Error updating card dates:', error);
+      setError(`Failed to update dates: ${error.message}`);
     }
   };
 
@@ -252,6 +399,8 @@ function App() {
             card={selectedCard} 
             fieldLayout={settings?.fieldLayout || 'stacked'}
             elementColumns={elementColumns}
+            config={config}
+            onUpdateDates={handleUpdateDates}
           />
         </div>
         
@@ -286,10 +435,12 @@ function App() {
         <KanbanBoard 
           data={displayData}
           settings={settings}
-          enableDragDrop={config.enableDragDrop}
+          enableWriteback={config.enableWriteback}
           onCardMove={handleCardMove}
           onCardClick={settings.modalPreference === 'external' ? handleCardClick : undefined}
           elementColumns={elementColumns}
+          config={config}
+          onUpdateDates={handleUpdateDates}
         />
       </div>
       

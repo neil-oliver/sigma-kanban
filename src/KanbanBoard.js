@@ -360,10 +360,12 @@ function customCollisionDetection(args) {
 }
 
 // Main Kanban Board component
-function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick, elementColumns }) {
+function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick, elementColumns, config, onUpdateDates }) {
   const [activeCard, setActiveCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const enableDragDrop = enableWriteback;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -490,6 +492,9 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick, 
             onClose={handleModalClose}
             card={selectedCard}
             fieldLayout={settings?.fieldLayout || 'stacked'}
+            elementColumns={elementColumns}
+            config={config}
+            onUpdateDates={onUpdateDates}
           />
         )}
       </>
@@ -499,15 +504,17 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick, 
   return (
     <>
       {kanbanContent}
-      {!onCardClick && (
-        <CardModal
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          card={selectedCard}
-          fieldLayout={settings?.fieldLayout || 'stacked'}
-          elementColumns={elementColumns}
-        />
-      )}
+              {!onCardClick && (
+          <CardModal
+            isOpen={isModalOpen}
+            onClose={handleModalClose}
+            card={selectedCard}
+            fieldLayout={settings?.fieldLayout || 'stacked'}
+            elementColumns={elementColumns}
+            config={config}
+            onUpdateDates={onUpdateDates}
+          />
+        )}
     </>
   );
 }

@@ -112,26 +112,77 @@ export const normalizeUrl = (url) => {
 export const formatDateTime = (value, formatInfo) => {
   if (!value) return '';
   
-  // Handle different input types
-  let date;
-  if (typeof value === 'number') {
-    // Handle Unix timestamp (seconds or milliseconds)
-    date = new Date(value < 1e10 ? value * 1000 : value);
-  } else if (typeof value === 'string') {
-    // Handle string dates or timestamps
-    const numValue = Number(value);
-    if (!isNaN(numValue)) {
-      // String contains a number (timestamp)
-      date = new Date(numValue < 1e10 ? numValue * 1000 : numValue);
+  // Helper function to parse date as local date (not UTC)
+  const parseDateAsLocal = (dateValue) => {
+    if (!dateValue) return null;
+    
+    let date;
+    
+    if (typeof dateValue === 'number') {
+      // Handle Unix timestamp (seconds or milliseconds)
+      const timestamp = dateValue < 1e10 ? dateValue * 1000 : dateValue;
+      date = new Date(timestamp);
+      
+      // If this timestamp represents midnight UTC, convert it to local midnight
+      const utcHours = date.getUTCHours();
+      const utcMinutes = date.getUTCMinutes();
+      const utcSeconds = date.getUTCSeconds();
+      
+      if (utcHours === 0 && utcMinutes === 0 && utcSeconds === 0) {
+        // This is a midnight UTC timestamp, convert to local midnight
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth();
+        const day = date.getUTCDate();
+        date = new Date(year, month, day);
+      }
+    } else if (typeof dateValue === 'string') {
+      // Handle string dates or timestamps
+      const numValue = Number(dateValue);
+      if (!isNaN(numValue)) {
+        // String contains a number (timestamp)
+        const timestamp = numValue < 1e10 ? numValue * 1000 : numValue;
+        date = new Date(timestamp);
+        
+        // If this timestamp represents midnight UTC, convert it to local midnight
+        const utcHours = date.getUTCHours();
+        const utcMinutes = date.getUTCMinutes();
+        const utcSeconds = date.getUTCSeconds();
+        
+        if (utcHours === 0 && utcMinutes === 0 && utcSeconds === 0) {
+          // This is a midnight UTC timestamp, convert to local midnight
+          const year = date.getUTCFullYear();
+          const month = date.getUTCMonth();
+          const day = date.getUTCDate();
+          date = new Date(year, month, day);
+        }
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        // If it's a YYYY-MM-DD string, parse it as local date
+        const [year, month, day] = dateValue.split('-').map(Number);
+        // Create date in local timezone (month is 0-indexed)
+        date = new Date(year, month - 1, day);
+      } else if (dateValue.includes('T')) {
+        // Try parsing as ISO string but treat as local
+        const tempDate = new Date(dateValue);
+        // If it's a valid date, adjust for timezone offset
+        if (!isNaN(tempDate.getTime())) {
+          const offset = tempDate.getTimezoneOffset() * 60000; // Convert minutes to milliseconds
+          date = new Date(tempDate.getTime() + offset);
+        } else {
+          date = tempDate;
+        }
+      } else {
+        // Regular date string
+        date = new Date(dateValue);
+      }
     } else {
-      // Regular date string
-      date = new Date(value);
+      date = new Date(dateValue);
     }
-  } else {
-    date = new Date(value);
-  }
+    
+    return isNaN(date.getTime()) ? null : date;
+  };
   
-  if (isNaN(date.getTime())) return value; // Return original if invalid date
+  const date = parseDateAsLocal(value);
+  if (!date) return value; // Return original if invalid date
   
   // Use Sigma format if available
   if (formatInfo?.format) {
@@ -155,7 +206,11 @@ export const formatDateTime = (value, formatInfo) => {
       
       if (formatStr.includes('%y-%m-%d')) {
         // Pattern like "%Y-%m-%d" -> "2024-01-15"
-        return date.toISOString().split('T')[0];
+        // Use local timezone to avoid date shift
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       }
     } catch (e) {
       console.warn('Error parsing Sigma date format:', e);

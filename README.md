@@ -14,6 +14,7 @@ A flexible Sigma Computing plugin that creates interactive kanban boards from yo
 - **Column Information Access**: Uses `getElementColumns` to access proper column names and metadata
 - **Dual View Modes**: Kanban board view and dedicated detail view
 - **Flexible Modal System**: Internal modal or external detail view plugin integration
+- **Date Editing**: Inline date editing in detail view with shadcn/ui components
 
 ## Quick Start
 
@@ -105,7 +106,12 @@ function MyComponent() {
 ### Optional Fields
 - **Selected ID Variable**: Variable to receive the row ID of moved cards or selected cards
 - **Selected Category Variable**: Variable to receive the target board name
-- **Update Row**: Action trigger to handle data updates
+- **Selected Start Date Variable**: Variable to receive the start date when editing dates
+- **Selected End Date Variable**: Variable to receive the end date when editing dates
+- **Start Date Column**: Column containing start date values (for date editing)
+- **End Date Column**: Column containing end date values (for date editing)
+- **Update Category**: Action trigger to handle category/status updates
+- **Update Dates**: Action trigger to handle date updates
 - **Open Modal (External)**: Action trigger for external detail view integration
 - **Enable Drag & Drop**: Boolean toggle for interactive card movement (requires input table)
 - **Edit Mode**: Boolean toggle to show settings interface
@@ -304,6 +310,55 @@ The plugin uses optimistic updates to provide immediate visual feedback:
 // 5. Refreshes the data source
 ```
 
+## Date Editing Functionality
+
+The plugin supports inline date editing in the detail view when properly configured.
+
+### Requirements for Date Editing
+- **Enable Writeback**: Must be enabled in plugin configuration
+- **Date Columns**: Both start date and end date columns must be configured
+- **Date Variables**: Both `selectedStartDate` and `selectedEndDate` variables must be set
+- **Action Trigger**: `updateDates` action trigger must be configured
+
+### How Date Editing Works
+1. **Detail View Only**: Date editing is only available in detail view mode
+2. **Conditional Display**: Date editing interface appears only when all requirements are met
+3. **Dual Variable Setting**: When either date is changed, both start and end date variables are set
+4. **Action Trigger**: `updateDates` action is triggered after setting both variables
+5. **Format Consistency**: Dates are automatically converted to ISO string format
+
+### Date Editing Interface
+- **Prominent Section**: Date editing appears as a highlighted blue section at the top of card details
+- **Side-by-Side Pickers**: Start and end date pickers are displayed in a responsive grid layout
+- **Validation**: Update button is only enabled when both dates are selected
+- **Smart Field Hiding**: Date fields are hidden from normal card display when editing is enabled
+
+### Configuration for Date Editing
+1. **Date Columns**: Configure start date and end date columns in plugin settings
+2. **Variables**: Create variables in your Sigma workbook:
+   - `selectedStartDate` variable: Will receive the start date value
+   - `selectedEndDate` variable: Will receive the end date value
+3. **Action Trigger**: Create an action trigger named `updateDates` that:
+   - Uses the `id`, `selectedStartDate`, and `selectedEndDate` variables
+   - Updates the appropriate row in your input table
+   - Refreshes the data source
+
+### Example Date Editing Setup
+```javascript
+// In your Sigma workbook, create an action effect that:
+// 1. Gets the id variable value
+// 2. Gets the selectedStartDate variable value
+// 3. Gets the selectedEndDate variable value
+// 4. Updates the row with the matching ID
+// 5. Sets the start date and end date columns to the new values
+// 6. Refreshes the data source
+```
+
+### Date Format Handling
+- **Input Flexibility**: Accepts various date formats (strings, Date objects, timestamps)
+- **ISO Output**: Always outputs dates in ISO string format for consistency
+- **Validation**: Automatically validates date inputs and handles invalid dates gracefully
+
 ### Debug Information
 The plugin provides comprehensive debugging information in the browser console:
 - Current variable values
@@ -372,6 +427,7 @@ Create a powerful dual-plugin experience:
 - **Recruitment**: Move candidates through hiring process
 - **Support Tickets**: Track ticket resolution progress
 - **Dual-View Dashboards**: Kanban board with dedicated detail panels
+- **Date Management**: Edit start and end dates directly in the detail view
 - **Multi-User Workflows**: Separate views for different user roles
 
 ## Development
