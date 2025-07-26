@@ -7,6 +7,9 @@ import { Switch } from './components/ui/switch';
 import { HelpCircle } from 'lucide-react';
 import HelpModal from './HelpModal';
 import { getColumnName } from './utils/columnHelper';
+import { getColumnTypeStyles } from './utils/columnStyling';
+import * as LucideIcons from 'lucide-react';
+import { Badge } from './components/ui/badge';
 
 // Default settings for kanban board
 export const DEFAULT_SETTINGS = {
@@ -62,12 +65,38 @@ function Settings({
       .map(([key, column]) => ({
         key: column.name,
         name: column.name,
-        type: column.columnType
+        type: column.columnType,
+        columnKey: key,
+        format: column.format
       }))
       .filter(column => {
         // Exclude category and ID columns from sorting options
         return column.name !== categoryColumnName && column.name !== idColumnName;
       });
+  };
+
+  // Render column option with type styling
+  const renderColumnOption = (column) => {
+    const typeStyles = getColumnTypeStyles(column.type, column.format);
+    const IconComponent = LucideIcons[typeStyles.iconName];
+    
+    // Only show icons for special types, not text and numbers
+    const shouldShowIcon = ['boolean', 'datetime', 'link', 'variant', 'error'].includes(column.type);
+    
+    return (
+      <div className="flex items-center gap-2">
+        {shouldShowIcon && IconComponent && (
+          <IconComponent className="h-4 w-4 text-muted-foreground" />
+        )}
+        <span className="flex-1">{column.name}</span>
+        <Badge variant="secondary" className="text-xs">
+          {column.type}
+        </Badge>
+        {column.format && (
+          <LucideIcons.FileText className="h-3 w-3 text-muted-foreground" />
+        )}
+      </div>
+    );
   };
 
   const availableColumns = getAvailableColumns();
@@ -311,7 +340,7 @@ function Settings({
                       <SelectItem value="__card_title__">No specific column (use card title)</SelectItem>
                       {availableColumns.map((column) => (
                         <SelectItem key={column.key} value={column.key}>
-                          {column.name}
+                          {renderColumnOption(column)}
                         </SelectItem>
                       ))}
                     </SelectContent>

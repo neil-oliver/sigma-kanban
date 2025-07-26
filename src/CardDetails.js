@@ -1,6 +1,7 @@
 import React from 'react';
+import StyledField from './components/StyledField';
 
-function CardDetails({ card, fieldLayout = 'stacked' }) {
+function CardDetails({ card, fieldLayout = 'stacked', elementColumns }) {
   if (!card) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -12,15 +13,36 @@ function CardDetails({ card, fieldLayout = 'stacked' }) {
     );
   }
 
+  // Helper function to find column key by field name
+  const findColumnKeyByFieldName = (fieldName) => {
+    if (!elementColumns) return null;
+    return Object.keys(elementColumns).find(key => 
+      elementColumns[key].name === fieldName
+    );
+  };
+
   const renderField = (fieldName, value) => {
+    const columnKey = findColumnKeyByFieldName(fieldName);
+    
     if (fieldLayout === 'inline') {
       return (
         <div key={fieldName} className="mb-4 last:mb-0 flex items-center justify-between">
           <div className="text-sm font-medium text-gray-600 uppercase tracking-wide flex-shrink-0 mr-4">
             {fieldName}:
           </div>
-          <div className="text-base text-gray-900 text-right flex-1">
-            {value || 'N/A'}
+          <div className="text-base text-right flex-1">
+            {elementColumns && columnKey ? (
+              <StyledField 
+                value={value} 
+                columnKey={columnKey} 
+                elementColumns={elementColumns}
+                maxImageWidth="120px"
+                maxImageHeight="80px"
+                className="text-base"
+              />
+            ) : (
+              <span className="text-gray-900">{value || 'N/A'}</span>
+            )}
           </div>
         </div>
       );
@@ -31,8 +53,19 @@ function CardDetails({ card, fieldLayout = 'stacked' }) {
           <div className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
             {fieldName}
           </div>
-          <div className="text-base text-gray-900 p-3 bg-gray-50 rounded-md">
-            {value || 'N/A'}
+          <div className="p-3 bg-gray-50 rounded-md">
+            {elementColumns && columnKey ? (
+              <StyledField 
+                value={value} 
+                columnKey={columnKey} 
+                elementColumns={elementColumns}
+                maxImageWidth="200px"
+                maxImageHeight="150px"
+                className="text-base"
+              />
+            ) : (
+              <span className="text-gray-900">{value || 'N/A'}</span>
+            )}
           </div>
         </div>
       );

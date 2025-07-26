@@ -30,6 +30,7 @@ function App() {
   const config = useConfig();
   const sigmaData = useElementData(config.source);
   const elementColumns = useElementColumns(config.source);
+  console.log(elementColumns);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -250,7 +251,8 @@ function App() {
         <div className="flex-1 overflow-hidden">
           <CardDetails 
             card={selectedCard} 
-            fieldLayout={settings?.fieldLayout || 'stacked'} 
+            fieldLayout={settings?.fieldLayout || 'stacked'}
+            elementColumns={elementColumns}
           />
         </div>
         
@@ -288,6 +290,7 @@ function App() {
           enableDragDrop={config.enableDragDrop}
           onCardMove={handleCardMove}
           onCardClick={settings.modalPreference === 'external' ? handleCardClick : undefined}
+          elementColumns={elementColumns}
         />
       </div>
       

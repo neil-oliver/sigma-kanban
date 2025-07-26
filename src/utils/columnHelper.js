@@ -156,4 +156,60 @@ export function getColumnInfo(elementColumns, columnKey) {
   }
   
   return elementColumns[columnKey] || null;
-} 
+}
+
+/**
+ * Get columns filtered by type
+ * @param {Object} elementColumns - Column information from getElementColumns
+ * @param {string|Array} types - Single type or array of types to filter by
+ * @returns {Array} - Array of column objects with key, name, columnType, and id
+ */
+export function getColumnsByType(elementColumns, types) {
+  if (!elementColumns) return [];
+  
+  const targetTypes = Array.isArray(types) ? types : [types];
+  
+  return Object.entries(elementColumns)
+    .filter(([key, column]) => targetTypes.includes(column.columnType))
+    .map(([key, column]) => ({
+      key,
+      name: column.name,
+      columnType: column.columnType,
+      id: column.id,
+      format: column.format
+    }));
+}
+
+/**
+ * Check if a column has format information
+ * @param {Object} elementColumns - Column information from getElementColumns
+ * @param {string} columnKey - The column key to check
+ * @returns {boolean} - True if the column has format information
+ */
+export function hasColumnFormat(elementColumns, columnKey) {
+  const column = elementColumns?.[columnKey];
+  return !!(column?.format);
+}
+
+/**
+ * Get column format information
+ * @param {Object} elementColumns - Column information from getElementColumns
+ * @param {string} columnKey - The column key to get format for
+ * @returns {Object|null} - Format information or null if not available
+ */
+export function getColumnFormat(elementColumns, columnKey) {
+  const column = elementColumns?.[columnKey];
+  return column?.format || null;
+}
+
+/**
+ * Get all unique column types in the dataset
+ * @param {Object} elementColumns - Column information from getElementColumns
+ * @returns {Array} - Array of unique column types
+ */
+export function getUniqueColumnTypes(elementColumns) {
+  if (!elementColumns) return [];
+  
+  const types = Object.values(elementColumns).map(col => col.columnType);
+  return [...new Set(types)];
+}

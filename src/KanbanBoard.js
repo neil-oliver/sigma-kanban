@@ -19,9 +19,11 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
 import CardModal from './CardModal';
+import StyledField from './components/StyledField';
+import { getCardStyling } from './utils/columnStyling';
 
 // Card component
-function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout = 'stacked', onCardClick }) {
+function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout = 'stacked', onCardClick, elementColumns }) {
   const {
     attributes,
     listeners,
@@ -43,15 +45,36 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
     opacity: isSortableDragging ? 0.5 : 1,
   };
 
+  // Helper function to find column key by field name
+  const findColumnKeyByFieldName = (fieldName) => {
+    if (!elementColumns) return null;
+    return Object.keys(elementColumns).find(key => 
+      elementColumns[key].name === fieldName
+    );
+  };
+
   const renderField = (fieldName, value) => {
+    const columnKey = findColumnKeyByFieldName(fieldName);
+    
     if (fieldLayout === 'inline') {
       return (
         <div key={fieldName} className="mb-2 last:mb-0 flex items-center justify-between">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wide flex-shrink-0 mr-2">
             {fieldName}:
           </div>
-          <div className="text-sm text-gray-900 text-right flex-1 truncate">
-            {value || 'N/A'}
+          <div className="text-sm text-right flex-1 truncate">
+            {elementColumns && columnKey ? (
+              <StyledField 
+                value={value} 
+                columnKey={columnKey} 
+                elementColumns={elementColumns}
+                maxImageWidth="60px"
+                maxImageHeight="40px"
+                className="text-sm"
+              />
+            ) : (
+              <span className="text-gray-900">{value || 'N/A'}</span>
+            )}
           </div>
         </div>
       );
@@ -62,8 +85,19 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
             {fieldName}
           </div>
-          <div className="text-sm text-gray-900 mt-1">
-            {value || 'N/A'}
+          <div className="mt-1">
+            {elementColumns && columnKey ? (
+              <StyledField 
+                value={value} 
+                columnKey={columnKey} 
+                elementColumns={elementColumns}
+                maxImageWidth="80px"
+                maxImageHeight="50px"
+                className="text-sm"
+              />
+            ) : (
+              <span className="text-gray-900 text-sm">{value || 'N/A'}</span>
+            )}
           </div>
         </div>
       );
@@ -90,7 +124,7 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
       {...attributes}
       {...listeners}
       onClick={handleCardClick}
-      className={`bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
+      className={`${getCardStyling(card, elementColumns)} rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
         isDragging ? 'rotate-5 scale-105' : ''
       } ${isUpdating ? 'border-blue-300 bg-blue-50' : ''}`}
     >
@@ -117,7 +151,7 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
 }
 
 // Board column component
-function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fieldLayout = 'stacked', onCardClick }) {
+function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fieldLayout = 'stacked', onCardClick, elementColumns }) {
   const {
     setNodeRef,
     isOver,
@@ -130,15 +164,36 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
     disabled: false,
   });
 
+  // Helper function to find column key by field name
+  const findColumnKeyByFieldName = (fieldName) => {
+    if (!elementColumns) return null;
+    return Object.keys(elementColumns).find(key => 
+      elementColumns[key].name === fieldName
+    );
+  };
+
   const renderField = (fieldName, value) => {
+    const columnKey = findColumnKeyByFieldName(fieldName);
+    
     if (fieldLayout === 'inline') {
       return (
         <div key={fieldName} className="mb-2 last:mb-0 flex items-center justify-between">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wide flex-shrink-0 mr-2">
             {fieldName}:
           </div>
-          <div className="text-sm text-gray-900 text-right flex-1 truncate">
-            {value || 'N/A'}
+          <div className="text-sm text-right flex-1 truncate">
+            {elementColumns && columnKey ? (
+              <StyledField 
+                value={value} 
+                columnKey={columnKey} 
+                elementColumns={elementColumns}
+                maxImageWidth="60px"
+                maxImageHeight="40px"
+                className="text-sm"
+              />
+            ) : (
+              <span className="text-foreground">{value || 'N/A'}</span>
+            )}
           </div>
         </div>
       );
@@ -149,8 +204,19 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
             {fieldName}
           </div>
-          <div className="text-sm text-gray-900 mt-1">
-            {value || 'N/A'}
+          <div className="mt-1">
+            {elementColumns && columnKey ? (
+              <StyledField 
+                value={value} 
+                columnKey={columnKey} 
+                elementColumns={elementColumns}
+                maxImageWidth="80px"
+                maxImageHeight="50px"
+                className="text-sm"
+              />
+            ) : (
+              <span className="text-foreground text-sm">{value || 'N/A'}</span>
+            )}
           </div>
         </div>
       );
@@ -188,6 +254,7 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
                     isUpdating={updatingCardIds.includes(card.id)}
                     fieldLayout={fieldLayout}
                     onCardClick={onCardClick}
+                    elementColumns={elementColumns}
                   />
                 ))}
               </SortableContext>
@@ -195,7 +262,7 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
               cards.map((card) => (
                 <div 
                   key={card.id} 
-                  className="bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className={`${getCardStyling(card, elementColumns)} rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
                   onClick={() => onCardClick && onCardClick(card)}
                 >
                   {updatingCardIds.includes(card.id) && (
@@ -245,7 +312,7 @@ function customCollisionDetection(args) {
 }
 
 // Main Kanban Board component
-function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick }) {
+function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick, elementColumns }) {
   const [activeCard, setActiveCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -347,6 +414,7 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick }
               updatingCardIds={data.updatingCardIds || []}
               fieldLayout={settings?.fieldLayout || 'stacked'}
               onCardClick={handleCardClick}
+              elementColumns={elementColumns}
             />
           );
         })}
@@ -365,7 +433,7 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick }
         >
           {kanbanContent}
           <DragOverlay>
-            {activeCard ? <KanbanCard card={activeCard} isDragging /> : null}
+            {activeCard ? <KanbanCard card={activeCard} isDragging elementColumns={elementColumns} /> : null}
           </DragOverlay>
         </DndContext>
         {!onCardClick && (
@@ -389,6 +457,7 @@ function KanbanBoard({ data, settings, enableDragDrop, onCardMove, onCardClick }
           onClose={handleModalClose}
           card={selectedCard}
           fieldLayout={settings?.fieldLayout || 'stacked'}
+          elementColumns={elementColumns}
         />
       )}
     </>
