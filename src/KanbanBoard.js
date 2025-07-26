@@ -19,11 +19,12 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
 import CardModal from './CardModal';
-import StyledField from './components/StyledField';
-import { getCardStyling, isImageUrl } from './utils/columnStyling';
+import { getCardStyling } from './utils/columnStyling';
+import { renderField } from './utils/fieldRenderer';
+import { getColumnName } from './utils/columnHelper';
 
 // Card component
-function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout = 'stacked', onCardClick, elementColumns }) {
+function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout = 'stacked', onCardClick, elementColumns, showDates = false, startDateColumnName = null, endDateColumnName = null }) {
   const {
     attributes,
     listeners,
@@ -45,87 +46,15 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
     opacity: isSortableDragging ? 0.5 : 1,
   };
 
-  // Helper function to find column key by field name
-  const findColumnKeyByFieldName = (fieldName) => {
-    if (!elementColumns) return null;
-    return Object.keys(elementColumns).find(key => 
-      elementColumns[key].name === fieldName
-    );
-  };
-
-  const renderField = (fieldName, value) => {
-    const columnKey = findColumnKeyByFieldName(fieldName);
-    
-    // Check if this field contains an image
-    const isImageField = elementColumns && columnKey && (
-      elementColumns[columnKey].columnType === 'link' || 
-      (elementColumns[columnKey].columnType === 'text' && isImageUrl(value))
-    );
-    
-    if (isImageField) {
-      // Render image without field title or text block styling
-      return (
-        <div key={fieldName} className="mb-2 last:mb-0 flex justify-end">
-          {elementColumns && columnKey ? (
-            <StyledField 
-              value={value} 
-              columnKey={columnKey} 
-              elementColumns={elementColumns}
-              maxImageWidth="80px"
-              maxImageHeight="50px"
-              className="text-sm"
-            />
-          ) : null}
-        </div>
-      );
-    }
-    
-    if (fieldLayout === 'inline') {
-      return (
-        <div key={fieldName} className="mb-2 last:mb-0 flex items-center justify-between">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide flex-shrink-0 mr-2">
-            {fieldName}:
-          </div>
-          <div className="text-sm text-right flex-1 truncate">
-            {elementColumns && columnKey ? (
-              <StyledField 
-                value={value} 
-                columnKey={columnKey} 
-                elementColumns={elementColumns}
-                maxImageWidth="60px"
-                maxImageHeight="40px"
-                className="text-sm"
-              />
-            ) : (
-              <span className="text-gray-900">{value || 'N/A'}</span>
-            )}
-          </div>
-        </div>
-      );
-    } else {
-      // stacked layout (default)
-      return (
-        <div key={fieldName} className="mb-2 last:mb-0">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            {fieldName}
-          </div>
-          <div className="mt-1">
-            {elementColumns && columnKey ? (
-              <StyledField 
-                value={value} 
-                columnKey={columnKey} 
-                elementColumns={elementColumns}
-                maxImageWidth="80px"
-                maxImageHeight="50px"
-                className="text-sm"
-              />
-            ) : (
-              <span className="text-gray-900 text-sm">{value || 'N/A'}</span>
-            )}
-          </div>
-        </div>
-      );
-    }
+  // Use shared field renderer
+  const renderCardField = (fieldName, value) => {
+    return renderField(fieldName, value, elementColumns, fieldLayout, {
+      maxImageWidth: fieldLayout === 'inline' ? '60px' : '80px',
+      maxImageHeight: fieldLayout === 'inline' ? '40px' : '50px',
+      skipDateFields: !showDates,
+      startDateColumnName,
+      endDateColumnName
+    });
   };
 
   const handleCardClick = (e) => {
@@ -169,13 +98,13 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
       )}
       
       {/* Card Fields */}
-      {Object.entries(card.fields).map(([fieldName, value]) => renderField(fieldName, value))}
+      {Object.entries(card.fields).map(([fieldName, value]) => renderCardField(fieldName, value))}
     </div>
   );
 }
 
 // Board column component
-function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fieldLayout = 'stacked', onCardClick, elementColumns }) {
+function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fieldLayout = 'stacked', onCardClick, elementColumns, showDates = false, startDateColumnName = null, endDateColumnName = null }) {
   const {
     setNodeRef,
     isOver,
@@ -188,87 +117,15 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
     disabled: false,
   });
 
-  // Helper function to find column key by field name
-  const findColumnKeyByFieldName = (fieldName) => {
-    if (!elementColumns) return null;
-    return Object.keys(elementColumns).find(key => 
-      elementColumns[key].name === fieldName
-    );
-  };
-
-  const renderField = (fieldName, value) => {
-    const columnKey = findColumnKeyByFieldName(fieldName);
-    
-    // Check if this field contains an image
-    const isImageField = elementColumns && columnKey && (
-      elementColumns[columnKey].columnType === 'link' || 
-      (elementColumns[columnKey].columnType === 'text' && isImageUrl(value))
-    );
-    
-    if (isImageField) {
-      // Render image without field title or text block styling
-      return (
-        <div key={fieldName} className="mb-2 last:mb-0 flex justify-end">
-          {elementColumns && columnKey ? (
-            <StyledField 
-              value={value} 
-              columnKey={columnKey} 
-              elementColumns={elementColumns}
-              maxImageWidth="80px"
-              maxImageHeight="50px"
-              className="text-sm"
-            />
-          ) : null}
-        </div>
-      );
-    }
-    
-    if (fieldLayout === 'inline') {
-      return (
-        <div key={fieldName} className="mb-2 last:mb-0 flex items-center justify-between">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide flex-shrink-0 mr-2">
-            {fieldName}:
-          </div>
-          <div className="text-sm text-right flex-1 truncate">
-            {elementColumns && columnKey ? (
-              <StyledField 
-                value={value} 
-                columnKey={columnKey} 
-                elementColumns={elementColumns}
-                maxImageWidth="60px"
-                maxImageHeight="40px"
-                className="text-sm"
-              />
-            ) : (
-              <span className="text-foreground">{value || 'N/A'}</span>
-            )}
-          </div>
-        </div>
-      );
-    } else {
-      // stacked layout (default)
-      return (
-        <div key={fieldName} className="mb-2 last:mb-0">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            {fieldName}
-          </div>
-          <div className="mt-1">
-            {elementColumns && columnKey ? (
-              <StyledField 
-                value={value} 
-                columnKey={columnKey} 
-                elementColumns={elementColumns}
-                maxImageWidth="80px"
-                maxImageHeight="50px"
-                className="text-sm"
-              />
-            ) : (
-              <span className="text-foreground text-sm">{value || 'N/A'}</span>
-            )}
-          </div>
-        </div>
-      );
-    }
+  // Use shared field renderer
+  const renderCardField = (fieldName, value) => {
+    return renderField(fieldName, value, elementColumns, fieldLayout, {
+      maxImageWidth: fieldLayout === 'inline' ? '60px' : '80px',
+      maxImageHeight: fieldLayout === 'inline' ? '40px' : '50px',
+      skipDateFields: !showDates,
+      startDateColumnName,
+      endDateColumnName
+    });
   };
 
   return (
@@ -303,6 +160,9 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
                     fieldLayout={fieldLayout}
                     onCardClick={onCardClick}
                     elementColumns={elementColumns}
+                    showDates={showDates}
+                    startDateColumnName={startDateColumnName}
+                    endDateColumnName={endDateColumnName}
                   />
                 ))}
               </SortableContext>
@@ -330,7 +190,7 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
                   )}
                   
                   {/* Card Fields */}
-                  {Object.entries(card.fields).map(([fieldName, value]) => renderField(fieldName, value))}
+                  {Object.entries(card.fields).map(([fieldName, value]) => renderCardField(fieldName, value))}
                 </div>
               ))
             )}
@@ -450,6 +310,11 @@ function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick,
     );
   }
 
+  // Get date column names for filtering
+  const startDateColumnName = config?.startDate ? getColumnName(elementColumns, config.startDate) : null;
+  const endDateColumnName = config?.endDate ? getColumnName(elementColumns, config.endDate) : null;
+  const showDates = settings?.showDates ?? false;
+
   const kanbanContent = (
     <div className="h-full overflow-x-auto">
       <div className="flex gap-6 h-full p-6">
@@ -465,6 +330,9 @@ function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick,
               fieldLayout={settings?.fieldLayout || 'stacked'}
               onCardClick={handleCardClick}
               elementColumns={elementColumns}
+              showDates={showDates}
+              startDateColumnName={startDateColumnName}
+              endDateColumnName={endDateColumnName}
             />
           );
         })}
@@ -483,7 +351,7 @@ function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick,
         >
           {kanbanContent}
           <DragOverlay>
-            {activeCard ? <KanbanCard card={activeCard} isDragging elementColumns={elementColumns} /> : null}
+            {activeCard ? <KanbanCard card={activeCard} isDragging elementColumns={elementColumns} showDates={showDates} startDateColumnName={startDateColumnName} endDateColumnName={endDateColumnName} /> : null}
           </DragOverlay>
         </DndContext>
         {!onCardClick && (
@@ -495,6 +363,7 @@ function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick,
             elementColumns={elementColumns}
             config={config}
             onUpdateDates={onUpdateDates}
+            showDates={showDates}
           />
         )}
       </>
@@ -513,6 +382,7 @@ function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick,
             elementColumns={elementColumns}
             config={config}
             onUpdateDates={onUpdateDates}
+            showDates={showDates}
           />
         )}
     </>

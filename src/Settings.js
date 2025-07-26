@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS = {
   enableCardAnimations: true, // Smooth animations for drag and drop
   compactFieldDisplay: false, // Show field names inline vs above
   highlightEmptyBoards: true, // Visual indication for empty boards
+  showDates: false, // Show start and end dates on kanban cards
 };
 
 function Settings({ 
@@ -425,6 +426,21 @@ function Settings({
                 </Label>
               </div>
               <p className="text-sm text-muted-foreground">Visual indication for boards with no cards</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showDates">Show Start/End Dates</Label>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="showDates"
+                  checked={tempSettings.showDates}
+                  onCheckedChange={(checked) => setTempSettings({ ...tempSettings, showDates: checked })}
+                />
+                <Label htmlFor="showDates" className="text-sm font-normal">
+                  {tempSettings.showDates ? 'Enabled' : 'Disabled'}
+                </Label>
+              </div>
+              <p className="text-sm text-muted-foreground">Display start and end dates on kanban cards</p>
             </div>
           </div>
 

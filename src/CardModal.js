@@ -5,7 +5,7 @@ import {
 } from './components/ui/dialog';
 import CardDetails from './CardDetails';
 
-function CardModal({ isOpen, onClose, card, fieldLayout = 'stacked', elementColumns, config, onUpdateDates }) {
+function CardModal({ isOpen, onClose, card, fieldLayout = 'stacked', elementColumns, config, onUpdateDates, showDates = false }) {
   if (!card) return null;
 
   return (
@@ -18,6 +18,7 @@ function CardModal({ isOpen, onClose, card, fieldLayout = 'stacked', elementColu
           config={config}
           onUpdateDates={onUpdateDates}
           isModal={true}
+          showDates={showDates}
         />
       </DialogContent>
     </Dialog>

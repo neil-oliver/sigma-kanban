@@ -1,11 +1,10 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { client, useConfig, useElementData, useElementColumns, useVariable, useActionTrigger } from '@sigmacomputing/plugin';
 import { Button } from './components/ui/button';
 import { Settings as SettingsIcon } from 'lucide-react';
 import Settings, { DEFAULT_SETTINGS } from './Settings';
 import { processKanbanData } from './utils/dataProcessor';
-import { debugCardMove } from './utils/columnHelper';
+import { normalizeDate, formatDateAsLocal } from './utils/dateUtils';
 import KanbanBoard from './KanbanBoard';
 import CardDetails from './CardDetails';
 import './App.css';
@@ -78,7 +77,7 @@ function App() {
         const newSettings = { ...DEFAULT_SETTINGS, ...parsedConfig };
         setSettings(newSettings);
       } catch (err) {
-        console.error('Invalid config JSON:', err);
+        // Invalid config JSON - falling back to defaults
         setSettings(DEFAULT_SETTINGS);
       }
     } else {
@@ -86,11 +85,12 @@ function App() {
     }
   }, [config.config]);
 
-  // Process kanban data with column information
-  // Only process if we have the minimum required configuration
-  const kanbanData = (config.source && config.cardFields && config.category) 
-    ? processKanbanData(sigmaData, config, settings, elementColumns)
-    : null;
+  // Process kanban data with column information - memoized for performance
+  const kanbanData = useMemo(() => {
+    return (config.source && config.cardFields && config.category) 
+      ? processKanbanData(sigmaData, config, settings, elementColumns)
+      : null;
+  }, [sigmaData, config.source, config.cardFields, config.category, config.ID, config.cardTitle, config.startDate, config.endDate, settings, elementColumns]);
   
   // Use optimistic data if available, otherwise use processed data
   const displayData = optimisticData || kanbanData;
@@ -100,18 +100,18 @@ function App() {
   
 
 
-  // Find selected card based on selectedID variable
-  const findCardById = (cardId) => {
-    if (!displayData || !displayData.cards || !cardId) return null;
+  // Find selected card based on selectedID variable - memoized for performance
+  const selectedCard = useMemo(() => {
+    if (!displayData || !displayData.cards || !idVariable) return null;
     
     // Extract the actual value from the Sigma variable object
-    let actualCardId = cardId;
-    if (cardId && typeof cardId === 'object') {
+    let actualCardId = idVariable;
+    if (idVariable && typeof idVariable === 'object') {
       // Handle different Sigma variable object structures
-      if (cardId.value !== undefined) {
-        actualCardId = cardId.value;
-      } else if (cardId.defaultValue && cardId.defaultValue.value !== undefined) {
-        actualCardId = cardId.defaultValue.value;
+      if (idVariable.value !== undefined) {
+        actualCardId = idVariable.value;
+      } else if (idVariable.defaultValue && idVariable.defaultValue.value !== undefined) {
+        actualCardId = idVariable.defaultValue.value;
       }
     }
     
@@ -132,9 +132,7 @@ function App() {
     }
     
     return card;
-  };
-
-  const selectedCard = findCardById(idVariable);
+  }, [displayData, idVariable]);
 
   // Clear optimistic data when new data arrives (but not in detail view mode)
   useEffect(() => {
@@ -154,26 +152,20 @@ function App() {
     }
   }, [optimisticData]);
 
-  const handleSettingsSave = (newSettings) => {
+  const handleSettingsSave = useCallback((newSettings) => {
     setSettings(newSettings);
     setShowSettings(false);
-  };
+  }, []);
 
-  const handleCardMove = async (cardId, fromBoard, toBoard) => {
+  const handleCardMove = useCallback(async (cardId, fromBoard, toBoard) => {
     if (!config.enableWriteback) return;
     
     try {
-      console.log('Card move triggered:', { cardId, fromBoard, toBoard });
-      
       // Find the card to get the actual rowId
       const card = kanbanData.cards.find(c => c.id === cardId);
       if (!card) {
-        console.error('Card not found:', cardId);
         return;
       }
-      
-      // Debug the card move operation
-      debugCardMove(card, fromBoard, toBoard, config, elementColumns);
       
       // Optimistically update the local state immediately
       if (kanbanData) {
@@ -205,117 +197,52 @@ function App() {
       // Trigger the updateCategory action
       triggerUpdateCategory();
       
-      console.log('Variables set and action triggered:', {
-        id: actualRowId,
-        category: toBoard
-      });
+      // Variables set and action triggered successfully
     } catch (error) {
-      console.error('Error updating card position:', error);
       setError(`Failed to update card: ${error.message}`);
       // Clear optimistic data on error
       setOptimisticData(null);
     }
-  };
+  }, [config.enableWriteback, kanbanData, setIdVariable, setCategoryVariable, triggerUpdateCategory]);
 
-  const handleUpdateDates = async (rowId, startDate, endDate) => {
+  const handleUpdateDates = useCallback(async (rowId, startDate, endDate) => {
     if (!config.enableWriteback) return;
     
     try {
-      console.log('Date update triggered:', { rowId, startDate, endDate });
-      
-      // Normalize the new dates
-      let normalizedStartDate = null;
-      let normalizedEndDate = null;
-
-      console.log('Date normalization input:', { startDate, endDate, startDateType: typeof startDate, endDateType: typeof endDate });
-
-      // Handle start date normalization
-      if (startDate instanceof Date) {
-        normalizedStartDate = startDate;
-      } else if (typeof startDate === 'string') {
-        // Handle timestamp strings (e.g., "1750723200000")
-        if (/^\d+$/.test(startDate)) {
-          const timestamp = parseInt(startDate, 10);
-          normalizedStartDate = new Date(timestamp);
-        } else {
-          normalizedStartDate = new Date(startDate);
-        }
-      } else if (Array.isArray(startDate) && startDate.length > 0) {
-        const firstDate = startDate[0];
-        if (firstDate instanceof Date) {
-          normalizedStartDate = firstDate;
-        } else if (typeof firstDate === 'string' && /^\d+$/.test(firstDate)) {
-          const timestamp = parseInt(firstDate, 10);
-          normalizedStartDate = new Date(timestamp);
-        } else {
-          normalizedStartDate = new Date(String(firstDate));
-        }
-      }
-
-      // Handle end date normalization
-      if (endDate instanceof Date) {
-        normalizedEndDate = endDate;
-      } else if (typeof endDate === 'string') {
-        // Handle timestamp strings (e.g., "1750723200000")
-        if (/^\d+$/.test(endDate)) {
-          const timestamp = parseInt(endDate, 10);
-          normalizedEndDate = new Date(timestamp);
-        } else {
-          normalizedEndDate = new Date(endDate);
-        }
-      } else if (Array.isArray(endDate) && endDate.length > 0) {
-        const firstDate = endDate[0];
-        if (firstDate instanceof Date) {
-          normalizedEndDate = firstDate;
-        } else if (typeof firstDate === 'string' && /^\d+$/.test(firstDate)) {
-          const timestamp = parseInt(firstDate, 10);
-          normalizedEndDate = new Date(timestamp);
-        } else {
-          normalizedEndDate = new Date(String(firstDate));
-        }
-      }
-
-      console.log('Date normalization result:', { 
-        normalizedStartDate, 
-        normalizedEndDate,
-        startDateValid: normalizedStartDate && !isNaN(normalizedStartDate.getTime()),
-        endDateValid: normalizedEndDate && !isNaN(normalizedEndDate.getTime())
-      });
+      // Normalize the new dates using shared utility
+      const normalizedStartDate = normalizeDate(startDate);
+      const normalizedEndDate = normalizeDate(endDate);
 
       // Set the ID variable with the selected card's row ID
       if (config.selectedID && rowId !== undefined) {
         try {
           await setIdVariable(rowId);
         } catch (error) {
-          console.error('Error setting ID variable:', error);
+          // Error setting ID variable - continue with other operations
         }
       }
       
       // Handle start date - set as YYYY-MM-DD string format in local timezone
-      if (config.selectedStartDate && normalizedStartDate && !isNaN(normalizedStartDate.getTime())) {
+      if (config.selectedStartDate && normalizedStartDate) {
         try {
-          // Format as YYYY-MM-DD in local timezone
-          const year = normalizedStartDate.getFullYear();
-          const month = String(normalizedStartDate.getMonth() + 1).padStart(2, '0');
-          const day = String(normalizedStartDate.getDate()).padStart(2, '0');
-          const startDateFormatted = `${year}-${month}-${day}`;
-          await setStartDateVariable(startDateFormatted);
+          const startDateFormatted = formatDateAsLocal(normalizedStartDate);
+          if (startDateFormatted) {
+            await setStartDateVariable(startDateFormatted);
+          }
         } catch (error) {
-          console.error('Error setting start date variable:', error);
+          // Error setting start date variable - continue with other operations
         }
       }
       
       // Handle end date - set as YYYY-MM-DD string format in local timezone
-      if (config.selectedEndDate && normalizedEndDate && !isNaN(normalizedEndDate.getTime())) {
+      if (config.selectedEndDate && normalizedEndDate) {
         try {
-          // Format as YYYY-MM-DD in local timezone
-          const year = normalizedEndDate.getFullYear();
-          const month = String(normalizedEndDate.getMonth() + 1).padStart(2, '0');
-          const day = String(normalizedEndDate.getDate()).padStart(2, '0');
-          const endDateFormatted = `${year}-${month}-${day}`;
-          await setEndDateVariable(endDateFormatted);
+          const endDateFormatted = formatDateAsLocal(normalizedEndDate);
+          if (endDateFormatted) {
+            await setEndDateVariable(endDateFormatted);
+          }
         } catch (error) {
-          console.error('Error setting end date variable:', error);
+          // Error setting end date variable - continue with other operations
         }
       }
       
@@ -324,27 +251,20 @@ function App() {
         await triggerUpdateDates();
       }
       
-      console.log('Date variables set and action triggered:', {
-        id: rowId,
-        startDate: normalizedStartDate && !isNaN(normalizedStartDate.getTime()) ? 
-          `${normalizedStartDate.getFullYear()}-${String(normalizedStartDate.getMonth() + 1).padStart(2, '0')}-${String(normalizedStartDate.getDate()).padStart(2, '0')}` : null,
-        endDate: normalizedEndDate && !isNaN(normalizedEndDate.getTime()) ? 
-          `${normalizedEndDate.getFullYear()}-${String(normalizedEndDate.getMonth() + 1).padStart(2, '0')}-${String(normalizedEndDate.getDate()).padStart(2, '0')}` : null
-      });
+      // Date variables set and action triggered successfully
     } catch (error) {
-      console.error('Error updating card dates:', error);
       setError(`Failed to update dates: ${error.message}`);
     }
-  };
+  }, [config.enableWriteback, config.selectedID, config.selectedStartDate, config.selectedEndDate, setIdVariable, setStartDateVariable, setEndDateVariable, triggerUpdateDates]);
 
-  const handleCardClick = (card) => {
+  const handleCardClick = useCallback((card) => {
     if (settings.modalPreference === 'external') {
       // Set the ID variable and trigger the external modal action
       setIdVariable(card.rowId);
       triggerOpenModal();
     }
     // For internal modal, KanbanBoard handles the modal state directly
-  };
+  }, [settings.modalPreference, setIdVariable, triggerOpenModal]);
 
   if (error) {
     return (
@@ -401,6 +321,7 @@ function App() {
             elementColumns={elementColumns}
             config={config}
             onUpdateDates={handleUpdateDates}
+            showDates={settings?.showDates ?? false}
           />
         </div>
         

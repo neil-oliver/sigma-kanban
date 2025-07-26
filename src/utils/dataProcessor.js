@@ -10,12 +10,6 @@ import { getColumnName, validateRequiredColumns } from './columnHelper';
  */
 export function processKanbanData(sigmaData, config, settings, elementColumns) {
   if (!sigmaData || !config.cardFields || !config.category || !elementColumns) {
-    console.warn('Missing required data for kanban processing:', {
-      hasSigmaData: !!sigmaData,
-      hasCardFields: !!config.cardFields,
-      hasCategory: !!config.category,
-      hasElementColumns: !!elementColumns
-    });
     return null;
   }
 
@@ -37,10 +31,6 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
   
   const columnValidation = validateRequiredColumns(elementColumns, requiredColumns);
   if (!columnValidation.isValid) {
-    // Only show warning if we have some data but missing required columns
-    if (sigmaData && Object.keys(sigmaData).length > 0) {
-      console.warn('Missing required columns:', columnValidation.missingColumns);
-    }
     return null;
   }
 
@@ -48,10 +38,6 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
   const categoryColumnKey = config.category;
   const categoryData = sigmaData[categoryColumnKey] || [];
   if (categoryData.length === 0) {
-    // Only show warning if we have data but missing category column
-    if (sigmaData && Object.keys(sigmaData).length > 0) {
-      console.warn('No category column data found for key:', categoryColumnKey);
-    }
     return null;
   }
 
@@ -98,11 +84,6 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
   fieldNames.forEach(fieldKey => {
     if (sigmaData[fieldKey]) {
       cardFieldsData[fieldKey] = sigmaData[fieldKey];
-    } else {
-      // Only show warning if we have data but missing field
-      if (sigmaData && Object.keys(sigmaData).length > 0) {
-        console.warn('Field not found in sigma data:', fieldKey);
-      }
     }
   });
 

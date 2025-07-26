@@ -112,37 +112,7 @@ export function validateRequiredColumns(elementColumns, requiredColumns) {
   };
 }
 
-/**
- * Debug utility for drag and drop operations
- * @param {Object} card - The card being moved
- * @param {string} fromBoard - The source board name
- * @param {string} toBoard - The target board name
- * @param {Object} config - The plugin configuration
- * @param {Object} elementColumns - Column information
- */
-export function debugCardMove(card, fromBoard, toBoard, config, elementColumns) {
-  console.group('Card Move Debug Info');
-  console.log('Card:', {
-    id: card.id,
-    rowId: card.rowId,
-    boardId: card.boardId,
-    fields: card.fields
-  });
-  console.log('Move:', {
-    fromBoard,
-    toBoard
-  });
-  console.log('Config:', {
-    source: config.source,
-    ID: config.ID,
-    category: config.category,
-    selectedID: config.selectedID,
-    selectedCategory: config.selectedCategory,
-    updateRow: config.updateRow
-  });
-  console.log('Element Columns:', elementColumns);
-  console.groupEnd();
-}
+// Debug function removed for production
 
 /**
  * Get column information for debugging

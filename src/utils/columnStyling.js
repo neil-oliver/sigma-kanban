@@ -1,3 +1,5 @@
+import { parseDateAsLocal } from './dateUtils';
+
 /**
  * Utility functions for styling and formatting columns based on their Sigma types
  * Handles all column types: text, number, boolean, datetime, variant, link, error
@@ -51,11 +53,7 @@ export const isImageUrl = (url) => {
     // URL parsing failed, continue with extension check only
   }
   
-  const isImage = hasImageExtension || isImageHosting;
-  
-
-  
-  return isImage;
+  return hasImageExtension || isImageHosting;
 };
 
 /**
@@ -112,75 +110,6 @@ export const normalizeUrl = (url) => {
 export const formatDateTime = (value, formatInfo) => {
   if (!value) return '';
   
-  // Helper function to parse date as local date (not UTC)
-  const parseDateAsLocal = (dateValue) => {
-    if (!dateValue) return null;
-    
-    let date;
-    
-    if (typeof dateValue === 'number') {
-      // Handle Unix timestamp (seconds or milliseconds)
-      const timestamp = dateValue < 1e10 ? dateValue * 1000 : dateValue;
-      date = new Date(timestamp);
-      
-      // If this timestamp represents midnight UTC, convert it to local midnight
-      const utcHours = date.getUTCHours();
-      const utcMinutes = date.getUTCMinutes();
-      const utcSeconds = date.getUTCSeconds();
-      
-      if (utcHours === 0 && utcMinutes === 0 && utcSeconds === 0) {
-        // This is a midnight UTC timestamp, convert to local midnight
-        const year = date.getUTCFullYear();
-        const month = date.getUTCMonth();
-        const day = date.getUTCDate();
-        date = new Date(year, month, day);
-      }
-    } else if (typeof dateValue === 'string') {
-      // Handle string dates or timestamps
-      const numValue = Number(dateValue);
-      if (!isNaN(numValue)) {
-        // String contains a number (timestamp)
-        const timestamp = numValue < 1e10 ? numValue * 1000 : numValue;
-        date = new Date(timestamp);
-        
-        // If this timestamp represents midnight UTC, convert it to local midnight
-        const utcHours = date.getUTCHours();
-        const utcMinutes = date.getUTCMinutes();
-        const utcSeconds = date.getUTCSeconds();
-        
-        if (utcHours === 0 && utcMinutes === 0 && utcSeconds === 0) {
-          // This is a midnight UTC timestamp, convert to local midnight
-          const year = date.getUTCFullYear();
-          const month = date.getUTCMonth();
-          const day = date.getUTCDate();
-          date = new Date(year, month, day);
-        }
-      } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-        // If it's a YYYY-MM-DD string, parse it as local date
-        const [year, month, day] = dateValue.split('-').map(Number);
-        // Create date in local timezone (month is 0-indexed)
-        date = new Date(year, month - 1, day);
-      } else if (dateValue.includes('T')) {
-        // Try parsing as ISO string but treat as local
-        const tempDate = new Date(dateValue);
-        // If it's a valid date, adjust for timezone offset
-        if (!isNaN(tempDate.getTime())) {
-          const offset = tempDate.getTimezoneOffset() * 60000; // Convert minutes to milliseconds
-          date = new Date(tempDate.getTime() + offset);
-        } else {
-          date = tempDate;
-        }
-      } else {
-        // Regular date string
-        date = new Date(dateValue);
-      }
-    } else {
-      date = new Date(dateValue);
-    }
-    
-    return isNaN(date.getTime()) ? null : date;
-  };
-  
   const date = parseDateAsLocal(value);
   if (!date) return value; // Return original if invalid date
   
@@ -213,7 +142,7 @@ export const formatDateTime = (value, formatInfo) => {
         return `${year}-${month}-${day}`;
       }
     } catch (e) {
-      console.warn('Error parsing Sigma date format:', e);
+      // Error parsing Sigma date format - using default
     }
   }
   
@@ -329,7 +258,6 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
   } = options;
 
   if (!elementColumns || !elementColumns[columnKey]) {
-    console.log('renderStyledField: No column info found for key:', columnKey);
     return {
       component: 'span',
       props: { children: value },
@@ -338,8 +266,6 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
   }
 
   const column = elementColumns[columnKey];
-  
-
   
   // Only show icons for special types, not text and numbers
   const shouldShowIcon = showIcon && ['boolean', 'datetime', 'link', 'variant', 'error'].includes(column.columnType);
