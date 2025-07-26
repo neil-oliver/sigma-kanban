@@ -20,7 +20,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
 import CardModal from './CardModal';
 import StyledField from './components/StyledField';
-import { getCardStyling } from './utils/columnStyling';
+import { getCardStyling, isImageUrl } from './utils/columnStyling';
 
 // Card component
 function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout = 'stacked', onCardClick, elementColumns }) {
@@ -55,6 +55,30 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
 
   const renderField = (fieldName, value) => {
     const columnKey = findColumnKeyByFieldName(fieldName);
+    
+    // Check if this field contains an image
+    const isImageField = elementColumns && columnKey && (
+      elementColumns[columnKey].columnType === 'link' || 
+      (elementColumns[columnKey].columnType === 'text' && isImageUrl(value))
+    );
+    
+    if (isImageField) {
+      // Render image without field title or text block styling
+      return (
+        <div key={fieldName} className="mb-2 last:mb-0 flex justify-end">
+          {elementColumns && columnKey ? (
+            <StyledField 
+              value={value} 
+              columnKey={columnKey} 
+              elementColumns={elementColumns}
+              maxImageWidth="80px"
+              maxImageHeight="50px"
+              className="text-sm"
+            />
+          ) : null}
+        </div>
+      );
+    }
     
     if (fieldLayout === 'inline') {
       return (
@@ -174,6 +198,30 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
 
   const renderField = (fieldName, value) => {
     const columnKey = findColumnKeyByFieldName(fieldName);
+    
+    // Check if this field contains an image
+    const isImageField = elementColumns && columnKey && (
+      elementColumns[columnKey].columnType === 'link' || 
+      (elementColumns[columnKey].columnType === 'text' && isImageUrl(value))
+    );
+    
+    if (isImageField) {
+      // Render image without field title or text block styling
+      return (
+        <div key={fieldName} className="mb-2 last:mb-0 flex justify-end">
+          {elementColumns && columnKey ? (
+            <StyledField 
+              value={value} 
+              columnKey={columnKey} 
+              elementColumns={elementColumns}
+              maxImageWidth="80px"
+              maxImageHeight="50px"
+              className="text-sm"
+            />
+          ) : null}
+        </div>
+      );
+    }
     
     if (fieldLayout === 'inline') {
       return (

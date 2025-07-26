@@ -11,7 +11,6 @@
  */
 export const isImageUrl = (url) => {
   if (!url || typeof url !== 'string') {
-    console.log('isImageUrl: Invalid URL input:', url);
     return false;
   }
   
@@ -54,15 +53,7 @@ export const isImageUrl = (url) => {
   
   const isImage = hasImageExtension || isImageHosting;
   
-  console.log('isImageUrl debug:', {
-    originalUrl: url,
-    cleanUrl: cleanUrl,
-    hasImageExtension: hasImageExtension,
-    isImageHosting: isImageHosting,
-    isImage: isImage,
-    matchingExtension: imageExtensions.find(ext => cleanUrl.toLowerCase().endsWith(ext)),
-    matchingDomain: imageHostingDomains.find(domain => url.includes(domain))
-  });
+
   
   return isImage;
 };
@@ -293,14 +284,7 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
 
   const column = elementColumns[columnKey];
   
-  console.log('renderStyledField debug:', {
-    value: value,
-    columnKey: columnKey,
-    columnType: column.columnType,
-    columnName: column.name,
-    isImageUrl: isImageUrl(value),
-    isValidUrl: isValidUrl(value)
-  });
+
   
   // Only show icons for special types, not text and numbers
   const shouldShowIcon = showIcon && ['boolean', 'datetime', 'link', 'variant', 'error'].includes(column.columnType);
@@ -309,19 +293,12 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
   // Handle different column types
   switch (column.columnType) {
     case 'link':
-      console.log('renderStyledField: Processing link type with value:', value);
       if (isImageUrl(value)) {
-        console.log('renderStyledField: Detected as image URL, rendering image component');
         return {
           component: 'div',
           props: {
-            className: 'flex items-center gap-2',
+            className: 'flex items-center justify-end',
             children: [
-              shouldShowIcon && {
-                type: 'LucideIcon',
-                name: 'Image',
-                props: { className: 'h-4 w-4 text-muted-foreground' }
-              },
               {
                 type: 'Avatar',
                 props: {
@@ -350,7 +327,7 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
                   }
                 }
               }
-            ].filter(Boolean)
+            ]
           }
         };
       } else if (isValidUrl(value)) {
@@ -367,7 +344,7 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
               {
                 type: 'a',
                 props: {
-                  href: value.startsWith('http') ? value : `https://${value}`,
+                  href: normalizeUrl(value),
                   target: '_blank',
                   rel: 'noopener noreferrer',
                   className: typeStyles.className,
@@ -403,17 +380,11 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
     default:
       // Check if this is a text field that contains an image URL
       if (column.columnType === 'text' && isImageUrl(value)) {
-        console.log('renderStyledField: Text field contains image URL, rendering as image');
         return {
           component: 'div',
           props: {
-            className: 'flex items-center gap-2',
+            className: 'flex items-center justify-end',
             children: [
-              shouldShowIcon && {
-                type: 'LucideIcon',
-                name: 'Image',
-                props: { className: 'h-4 w-4 text-muted-foreground' }
-              },
               {
                 type: 'Avatar',
                 props: {
@@ -442,7 +413,7 @@ export const renderStyledField = (value, columnKey, elementColumns, options = {}
                   }
                 }
               }
-            ].filter(Boolean)
+            ]
           }
         };
       }

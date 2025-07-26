@@ -1,5 +1,6 @@
 import React from 'react';
 import StyledField from './components/StyledField';
+import { isImageUrl } from './utils/columnStyling';
 
 function CardDetails({ card, fieldLayout = 'stacked', elementColumns }) {
   if (!card) {
@@ -23,6 +24,30 @@ function CardDetails({ card, fieldLayout = 'stacked', elementColumns }) {
 
   const renderField = (fieldName, value) => {
     const columnKey = findColumnKeyByFieldName(fieldName);
+    
+    // Check if this field contains an image
+    const isImageField = elementColumns && columnKey && (
+      elementColumns[columnKey].columnType === 'link' || 
+      (elementColumns[columnKey].columnType === 'text' && isImageUrl(value))
+    );
+    
+    if (isImageField) {
+      // Render image without field title or text block styling
+      return (
+        <div key={fieldName} className="mb-4 last:mb-0 flex justify-end">
+          {elementColumns && columnKey ? (
+            <StyledField 
+              value={value} 
+              columnKey={columnKey} 
+              elementColumns={elementColumns}
+              maxImageWidth="200px"
+              maxImageHeight="150px"
+              className="text-base"
+            />
+          ) : null}
+        </div>
+      );
+    }
     
     if (fieldLayout === 'inline') {
       return (
