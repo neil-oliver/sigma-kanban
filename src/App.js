@@ -30,7 +30,6 @@ function App() {
   const config = useConfig();
   const sigmaData = useElementData(config.source);
   const elementColumns = useElementColumns(config.source);
-  console.log(elementColumns);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
