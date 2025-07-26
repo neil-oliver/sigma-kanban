@@ -55,13 +55,7 @@ function CardDetails({
     );
   }
 
-  // Helper function to find column key by field name
-  const findColumnKeyByFieldName = (fieldName) => {
-    if (!elementColumns) return null;
-    return Object.keys(elementColumns).find(key => 
-      elementColumns[key].name === fieldName
-    );
-  };
+
 
   const handleDateChange = (dateType, newDate) => {
     if (dateType === 'start') {

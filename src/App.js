@@ -90,7 +90,7 @@ function App() {
     return (config.source && config.cardFields && config.category) 
       ? processKanbanData(sigmaData, config, settings, elementColumns)
       : null;
-  }, [sigmaData, config.source, config.cardFields, config.category, config.ID, config.cardTitle, config.startDate, config.endDate, settings, elementColumns]);
+  }, [sigmaData, config, settings, elementColumns]);
   
   // Use optimistic data if available, otherwise use processed data
   const displayData = optimisticData || kanbanData;
@@ -139,7 +139,7 @@ function App() {
     if (sigmaData && optimisticData && settings.viewMode !== 'detail') {
       setOptimisticData(null);
     }
-  }, [sigmaData, settings.viewMode]);
+  }, [sigmaData, optimisticData, settings.viewMode]);
 
   // Clear updating state after a timeout (fallback)
   useEffect(() => {
