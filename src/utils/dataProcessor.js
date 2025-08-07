@@ -168,39 +168,9 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
 
   // Sort cards if sorting is enabled
   if (settings.cardSorting !== 'none') {
-    cards.sort((a, b) => {
-      let aValue, bValue;
-
-      if (settings.sortColumn && settings.sortColumn !== '' && settings.sortColumn !== '__card_title__') {
-        // Sort by specific column
-        aValue = a.fields[settings.sortColumn] || '';
-        bValue = b.fields[settings.sortColumn] || '';
-      } else {
-        // Sort by card title
-        aValue = a.title || '';
-        bValue = b.title || '';
-      }
-
-      // Handle numeric sorting for priority, dates, etc.
-      const aNum = parseFloat(aValue);
-      const bNum = parseFloat(bValue);
-      
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        // Numeric sorting
-        if (settings.sortDirection === 'desc') {
-          return bNum - aNum;
-        } else {
-          return aNum - bNum;
-        }
-      } else {
-        // String sorting
-        if (settings.sortDirection === 'desc') {
-          return bValue.localeCompare(aValue);
-        } else {
-          return aValue.localeCompare(bValue);
-        }
-      }
-    });
+    const sorted = sortCardsForSettings(cards, settings);
+    cards.length = 0;
+    cards.push(...sorted);
   }
 
 
@@ -209,6 +179,50 @@ export function processKanbanData(sigmaData, config, settings, elementColumns) {
     boards,
     cards
   };
+}
+
+/**
+ * Sort cards according to current settings
+ * Returns a new array; does not mutate the input
+ * @param {Array} cards
+ * @param {Object} settings
+ * @returns {Array}
+ */
+export function sortCardsForSettings(cards, settings) {
+  if (!Array.isArray(cards)) return [];
+  if (!settings || settings.cardSorting === 'none') return [...cards];
+
+  const getComparableValues = (card) => {
+    let value;
+    if (settings.sortColumn && settings.sortColumn !== '' && settings.sortColumn !== '__card_title__') {
+      value = card?.fields?.[settings.sortColumn] ?? '';
+    } else {
+      value = card?.title ?? '';
+    }
+    const numericValue = parseFloat(value);
+    const isNumeric = !isNaN(numericValue) && isFinite(numericValue);
+    return { value, numericValue, isNumeric };
+  };
+
+  const copy = [...cards];
+  copy.sort((a, b) => {
+    const aComp = getComparableValues(a);
+    const bComp = getComparableValues(b);
+
+    if (aComp.isNumeric && bComp.isNumeric) {
+      return settings.sortDirection === 'desc'
+        ? bComp.numericValue - aComp.numericValue
+        : aComp.numericValue - bComp.numericValue;
+    }
+
+    const aStr = String(aComp.value);
+    const bStr = String(bComp.value);
+    return settings.sortDirection === 'desc'
+      ? bStr.localeCompare(aStr)
+      : aStr.localeCompare(bStr);
+  });
+
+  return copy;
 }
 
 /**

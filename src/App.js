@@ -3,7 +3,7 @@ import { client, useConfig, useElementData, useElementColumns, useVariable, useA
 import { Button } from './components/ui/button';
 import { Settings as SettingsIcon } from 'lucide-react';
 import Settings, { DEFAULT_SETTINGS } from './Settings';
-import { processKanbanData } from './utils/dataProcessor';
+import { processKanbanData, sortCardsForSettings } from './utils/dataProcessor';
 import { normalizeDate, formatDateAsLocal } from './utils/dateUtils';
 import KanbanBoard from './KanbanBoard';
 import CardDetails from './CardDetails';
@@ -169,20 +169,25 @@ function App() {
       
       // Optimistically update the local state immediately
       if (kanbanData) {
+        const updatedCards = kanbanData.cards.map(c => {
+          if (c.id === cardId) {
+            const newBoard = kanbanData.boards.find(b => b.name === toBoard);
+            return {
+              ...c,
+              boardId: newBoard ? newBoard.id : c.boardId
+            };
+          }
+          return c;
+        });
+
+        const sortedCards = settings.cardSorting !== 'none'
+          ? sortCardsForSettings(updatedCards, settings)
+          : updatedCards;
+
         const optimisticKanbanData = {
           ...kanbanData,
-          cards: kanbanData.cards.map(c => {
-            if (c.id === cardId) {
-              // Find the new board
-              const newBoard = kanbanData.boards.find(b => b.name === toBoard);
-              return {
-                ...c,
-                boardId: newBoard ? newBoard.id : c.boardId
-              };
-            }
-            return c;
-          }),
-          updatingCardIds: [cardId] // Track which card is being updated
+          cards: sortedCards,
+          updatingCardIds: [cardId]
         };
         setOptimisticData(optimisticKanbanData);
       }
@@ -203,7 +208,7 @@ function App() {
       // Clear optimistic data on error
       setOptimisticData(null);
     }
-  }, [config.enableWriteback, kanbanData, setIdVariable, setCategoryVariable, triggerUpdateCategory]);
+  }, [config.enableWriteback, kanbanData, settings, setIdVariable, setCategoryVariable, triggerUpdateCategory]);
 
   const handleUpdateDates = useCallback(async (rowId, startDate, endDate) => {
     if (!config.enableWriteback) return;
@@ -305,7 +310,7 @@ function App() {
       <div className="h-screen bg-background text-foreground relative flex flex-col">
         {config.editMode && (
           <Button 
-            className="absolute top-5 right-5 z-10 gap-2"
+            className="absolute top-5 right-5 z-50 gap-2"
             onClick={() => setShowSettings(true)}
             size="sm"
           >
@@ -344,7 +349,7 @@ function App() {
     <div className="h-screen bg-background text-foreground relative flex flex-col">
       {config.editMode && (
         <Button 
-          className="absolute top-5 right-5 z-10 gap-2"
+          className="absolute top-5 right-5 z-50 gap-2"
           onClick={() => setShowSettings(true)}
           size="sm"
         >
