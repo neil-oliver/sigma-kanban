@@ -134,12 +134,25 @@ function App() {
     return card;
   }, [displayData, idVariable]);
 
-  // Clear optimistic data when new data arrives (but not in detail view mode)
+  // Clear optimistic data only when refreshed data reflects the same updates
   useEffect(() => {
-    if (sigmaData && optimisticData && settings.viewMode !== 'detail') {
+    if (!optimisticData || settings.viewMode === 'detail') return;
+    // If we have derived kanbanData from the new sigmaData
+    if (!kanbanData) return;
+
+    const updatingIds = optimisticData.updatingCardIds || [];
+    if (updatingIds.length === 0) return;
+
+    const allMatched = updatingIds.every((id) => {
+      const newCard = kanbanData.cards.find((c) => c.id === id);
+      const optCard = optimisticData.cards.find((c) => c.id === id);
+      return newCard && optCard && newCard.boardId === optCard.boardId;
+    });
+
+    if (allMatched) {
       setOptimisticData(null);
     }
-  }, [sigmaData, optimisticData, settings.viewMode]);
+  }, [sigmaData, kanbanData, optimisticData, settings.viewMode]);
 
   // Clear updating state after a timeout (fallback)
   useEffect(() => {
@@ -161,17 +174,21 @@ function App() {
     if (!config.enableWriteback) return;
     
     try {
+      // Use currently displayed data as basis for optimistic update
+      const basisData = optimisticData || kanbanData;
+      if (!basisData) return;
+
       // Find the card to get the actual rowId
-      const card = kanbanData.cards.find(c => c.id === cardId);
+      const card = basisData.cards.find(c => c.id === cardId);
       if (!card) {
         return;
       }
       
       // Optimistically update the local state immediately
-      if (kanbanData) {
-        const updatedCards = kanbanData.cards.map(c => {
+      if (basisData) {
+        const updatedCards = basisData.cards.map(c => {
           if (c.id === cardId) {
-            const newBoard = kanbanData.boards.find(b => b.name === toBoard);
+            const newBoard = basisData.boards.find(b => b.name === toBoard);
             return {
               ...c,
               boardId: newBoard ? newBoard.id : c.boardId
@@ -185,7 +202,7 @@ function App() {
           : updatedCards;
 
         const optimisticKanbanData = {
-          ...kanbanData,
+          ...basisData,
           cards: sortedCards,
           updatingCardIds: [cardId]
         };
@@ -208,7 +225,7 @@ function App() {
       // Clear optimistic data on error
       setOptimisticData(null);
     }
-  }, [config.enableWriteback, kanbanData, settings, setIdVariable, setCategoryVariable, triggerUpdateCategory]);
+  }, [config.enableWriteback, kanbanData, optimisticData, settings, setIdVariable, setCategoryVariable, triggerUpdateCategory]);
 
   const handleUpdateDates = useCallback(async (rowId, startDate, endDate) => {
     if (!config.enableWriteback) return;
