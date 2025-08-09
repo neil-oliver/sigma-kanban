@@ -85,6 +85,15 @@ function App() {
     }
   }, [config.config]);
 
+  // Apply theme variables from settings
+  useEffect(() => {
+    const colors = settings?.styling?.customColors;
+    if (!colors) return;
+    Object.entries(colors).forEach(([property, value]) => {
+      document.documentElement.style.setProperty(property, value);
+    });
+  }, [settings?.styling]);
+
   // Process kanban data with column information - memoized for performance
   const kanbanData = useMemo(() => {
     return (config.source && config.cardFields && config.category) 

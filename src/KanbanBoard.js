@@ -79,19 +79,19 @@ function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout 
       onClick={handleCardClick}
       className={`${getCardStyling(card, elementColumns)} rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
         isDragging ? 'rotate-5 scale-105' : ''
-      } ${isUpdating ? 'border-blue-300 bg-blue-50' : ''}`}
+      } ${isUpdating ? 'border-ring/40 bg-accent/20' : ''}`}
     >
       {isUpdating && (
         <div className="flex items-center justify-center mb-2">
-          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs text-blue-600 ml-2">Updating...</span>
+          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs text-primary ml-2">Updating...</span>
         </div>
       )}
       
       {/* Card Title */}
       {card.title && (
-        <div className="mb-3 pb-2 border-b border-gray-100">
-          <h4 className="font-semibold text-gray-900 text-sm leading-tight">
+        <div className="mb-3 pb-2 border-b border-border/70">
+          <h4 className="font-semibold text-card-foreground text-sm leading-tight">
             {card.title}
           </h4>
         </div>
@@ -130,11 +130,11 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
 
   return (
     <div className="flex-1 min-w-80 max-w-sm h-full">
-      <div className="bg-gray-50 rounded-lg h-full flex flex-col">
+      <div className="bg-card rounded-lg h-full flex flex-col border border-border">
         {/* Sticky Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg sticky top-0 z-10">
-          <h3 className="font-semibold text-lg text-gray-800">{board.name}</h3>
-          <span className="bg-gray-200 text-gray-600 w-6 h-6 rounded-full text-sm font-medium flex items-center justify-center min-w-6">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-secondary rounded-t-lg sticky top-0 z-10">
+          <h3 className="font-semibold text-lg text-foreground">{board.name}</h3>
+          <span className="bg-muted text-muted-foreground w-6 h-6 rounded-full text-sm font-medium flex items-center justify-center min-w-6">
             {cards.length}
           </span>
         </div>
@@ -144,7 +144,7 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
           <div
             ref={setNodeRef}
             className={`h-full p-4 transition-colors duration-200 overflow-y-auto ${
-              isOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed rounded-md' : 'border-2 border-transparent'
+              isOver ? 'bg-accent/20 border-2 border-ring/40 border-dashed rounded-md' : 'border-2 border-transparent'
             }`}
           >
             {enableDragDrop ? (
@@ -182,8 +182,8 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
                   
                   {/* Card Title */}
                   {card.title && (
-                    <div className="mb-3 pb-2 border-b border-gray-100">
-                      <h4 className="font-semibold text-gray-900 text-sm leading-tight">
+                    <div className="mb-3 pb-2 border-b border-border/70">
+                      <h4 className="font-semibold text-card-foreground text-sm leading-tight">
                         {card.title}
                       </h4>
                     </div>
@@ -303,8 +303,8 @@ function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick,
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Data Available</h3>
-          <p className="text-gray-500">Please check your data source configuration.</p>
+          <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Data Available</h3>
+          <p className="text-muted-foreground">Please check your data source configuration.</p>
         </div>
       </div>
     );
