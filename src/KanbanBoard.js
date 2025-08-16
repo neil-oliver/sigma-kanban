@@ -137,7 +137,7 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
           <h3 className="font-semibold text-lg text-foreground">{board.name}</h3>
           <Badge
             variant="secondary"
-            className="bg-muted text-muted-foreground h-6 w-6 min-w-6 rounded-full px-0 text-sm font-medium flex items-center justify-center"
+            className="bg-primary/15 text-primary h-5 w-5 min-w-5 rounded-full p-0 text-xs font-semibold leading-none flex items-center justify-center"
           >
             {cards.length}
           </Badge>
