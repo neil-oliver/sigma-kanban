@@ -3,6 +3,8 @@ import { client, useConfig, useElementData, useElementColumns, useVariable, useA
 import { Button } from './components/ui/button';
 import { Settings as SettingsIcon } from 'lucide-react';
 import Settings, { DEFAULT_SETTINGS } from './Settings';
+import Onboarding from './Onboarding';
+import HelpModal from './HelpModal';
 import { processKanbanData, sortCardsForSettings } from './utils/dataProcessor';
 import { normalizeDate, formatDateAsLocal } from './utils/dateUtils';
 import KanbanBoard from './KanbanBoard';
@@ -51,6 +53,7 @@ function App() {
   const elementColumns = useElementColumns(config.source);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [optimisticData, setOptimisticData] = useState(null);
 
@@ -310,23 +313,36 @@ function App() {
 
   if (!config.source || !config.cardFields || !config.category) {
     return (
-      <div className="h-screen bg-background text-foreground flex items-center justify-center p-10">
-        <div className="text-center max-w-xl">
-          <h3 className="text-lg font-semibold mb-2">Kanban Board Plugin</h3>
-          <p className="text-muted-foreground">Please configure the data source, card fields, and category column.</p>
-        </div>
-      </div>
+      <>
+        <Onboarding
+          hasSource={!!config.source}
+          hasCardFields={!!config.cardFields}
+          hasCategory={!!config.category}
+          editMode={!!config.editMode}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenHelp={() => setShowHelp(true)}
+        />
+
+        <Settings
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          currentSettings={settings}
+          onSave={handleSettingsSave}
+          client={client}
+          elementColumns={elementColumns}
+          config={config}
+        />
+
+        <HelpModal
+          isOpen={showHelp}
+          onClose={() => setShowHelp(false)}
+        />
+      </>
     );
   }
 
   if (!sigmaData || !displayData) {
-    return (
-      <div className="h-screen bg-background text-foreground flex items-center justify-center p-10">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-muted-foreground">Loading data...</h3>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Render based on view mode
