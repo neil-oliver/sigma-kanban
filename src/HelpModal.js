@@ -165,6 +165,27 @@ function HelpModal({ isOpen, onClose }) {
               <li><span className="font-medium">Cluttered cards?</span> Use Compact layout, Inline fields, fewer Card Fields, or hide dates.</li>
             </ul>
           </div>
+
+          {/* Feedback & Issues */}
+          <div className="rounded-lg border border-border bg-card text-card-foreground p-4">
+            <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
+              <Info className="h-4 w-4" />
+              Feedback & Issues
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              Found a bug or have a feature request? Please report it using GitHub Issues at
+              {' '}
+              <a
+                href="https://github.com/neil-oliver/sigma-kanban/issues"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary underline"
+              >
+                github.com/neil-oliver/sigma-kanban
+              </a>
+              .
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
