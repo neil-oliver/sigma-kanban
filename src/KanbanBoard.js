@@ -321,7 +321,7 @@ function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick,
 
   const kanbanContent = (
     <div className="h-full overflow-x-auto">
-      <div className="flex gap-6 h-full p-6">
+      <div className="flex gap-6 h-full py-6 pl-6">
         {data.boards.map((board) => {
           const boardCards = data.cards.filter(card => card.boardId === board.id);
           return (
@@ -340,6 +340,8 @@ function KanbanBoard({ data, settings, enableWriteback, onCardMove, onCardClick,
             />
           );
         })}
+        {/* Spacer element to ensure right padding */}
+        <div className="w-1 flex-shrink-0"></div>
       </div>
     </div>
   );
