@@ -22,6 +22,7 @@ import CardModal from './CardModal';
 import { getCardStyling } from './utils/columnStyling';
 import { renderField } from './utils/fieldRenderer';
 import { getColumnName } from './utils/columnHelper';
+import { Badge } from './components/ui/badge';
 
 // Card component
 function KanbanCard({ card, isDragging = false, isUpdating = false, fieldLayout = 'stacked', onCardClick, elementColumns, showDates = false, startDateColumnName = null, endDateColumnName = null }) {
@@ -134,9 +135,12 @@ function KanbanColumn({ board, cards, enableDragDrop, updatingCardIds = [], fiel
         {/* Sticky Header */}
         <div className="flex items-center justify-between p-4 border-b border-border bg-secondary rounded-t-lg sticky top-0 z-10">
           <h3 className="font-semibold text-lg text-foreground">{board.name}</h3>
-          <span className="bg-muted text-muted-foreground w-6 h-6 rounded-full text-sm font-medium flex items-center justify-center min-w-6">
+          <Badge
+            variant="secondary"
+            className="bg-muted text-muted-foreground h-6 w-6 min-w-6 rounded-full px-0 text-sm font-medium flex items-center justify-center"
+          >
             {cards.length}
-          </span>
+          </Badge>
         </div>
         
         {/* Scrollable Content Area */}
