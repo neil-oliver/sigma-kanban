@@ -1,6 +1,6 @@
-# Sigma Workbook Setup for Drag & Drop
+# Sigma Workbook Setup for Writeback (Drag & Drop)
 
-This guide explains how to set up your Sigma workbook to work with the Kanban plugin's drag and drop functionality.
+This guide explains how to set up your Sigma workbook to work with the Kanban plugin's writeback features, including drag & drop.
 
 ## Prerequisites
 
@@ -29,21 +29,21 @@ In your Sigma workbook, create two variables:
 Create an action trigger that will be called when cards are moved:
 
 #### Action Trigger Setup
-- **Name**: `updateRow`
+- **Name**: `updateCategory`
 - **Type**: Action Trigger
 - **Description**: Updates row data when card is moved
 
 ### 3. Create Action Effect
 
-Create an action effect that responds to the `updateRow` trigger:
+Create an action effect that responds to the `updateCategory` trigger:
 
 #### Action Effect Logic
 ```javascript
 // Pseudo-code for the action effect
-function updateRowAction() {
+function updateCategoryAction() {
   // 1. Get the current values of the variables
-  const rowId = getVariableValue('id');
-  const newCategory = getVariableValue('category');
+  const rowId = getVariableValue('selectedID');
+  const newCategory = getVariableValue('selectedCategory');
   
   // 2. Find the row with the matching ID
   const targetRow = findRowById(rowId);
@@ -67,8 +67,8 @@ In your plugin configuration:
 5. **Category Column**: Select your board/status column
 6. **Selected ID Variable**: Select the `selectedID` variable you created
 7. **Selected Category Variable**: Select the `selectedCategory` variable you created
-8. **Update Row**: Select the `updateRow` action trigger you created
-9. **Enable Drag & Drop**: Toggle this on
+8. **Update Category**: Select the `updateCategory` action trigger you created
+9. **Enable Writeback**: Toggle this on
 
 ## Example Data Structure
 
@@ -104,7 +104,7 @@ In your plugin configuration:
 - Ensure variables are accessible to the plugin
 
 ### Action Not Triggering
-- Verify action trigger name is `updateRow`
+- Verify action trigger name is `updateCategory`
 - Check that the action trigger is properly configured
 - Look for JavaScript errors in the console
 
@@ -114,7 +114,7 @@ In your plugin configuration:
 - Verify the data source refresh is working
 
 ### Cards Not Moving
-- Confirm "Enable Drag & Drop" is toggled on
+- Confirm "Enable Writeback" is toggled on
 - Check that you're using an input table (not regular table)
 - Verify all required columns are selected in plugin config
 
@@ -130,7 +130,7 @@ Card Move Debug Info:
   Config: { source: "...", ID: "...", boardColumn: "...", ... }
   Element Columns: {...}
   
-Variables set and action triggered: { id: 1, category: "In Progress" }
+Variables set and action triggered: { selectedID: 1, selectedCategory: "In Progress" }
 ```
 
 ## Best Practices

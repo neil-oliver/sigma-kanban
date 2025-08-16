@@ -26,10 +26,10 @@ A flexible Sigma Computing plugin that creates interactive kanban boards from yo
    - **Card Fields**: Columns to display on cards (select multiple)
    - **Board/Status Column**: Column containing status/board information
 
-### 2. Optional: Enable Drag & Drop
+### 2. Optional: Enable Writeback (Drag & Drop + Date Updates)
 1. Use an **Input Table** as your data source (not a regular table)
-2. Enable **"Enable Drag & Drop"** toggle in plugin config
-3. Users can now drag cards between boards to update status
+2. Enable **"Enable Writeback"** in the plugin config
+3. Users can now drag cards between boards to update status; date updates become available in Detail view
 
 ### 3. Advanced Configuration
 1. Enable **Edit Mode** in the plugin config
@@ -113,7 +113,7 @@ function MyComponent() {
 - **Update Category**: Action trigger to handle category/status updates
 - **Update Dates**: Action trigger to handle date updates
 - **Open Modal (External)**: Action trigger for external detail view integration
-- **Enable Drag & Drop**: Boolean toggle for interactive card movement (requires input table)
+- **Enable Writeback**: Boolean toggle to enable drag & drop and date updates (requires input table)
 - **Edit Mode**: Boolean toggle to show settings interface
 - **Settings Config**: JSON configuration (auto-managed by settings UI)
 
@@ -135,7 +135,7 @@ function MyComponent() {
 - **Category Column**: `Status`
 - **Selected ID Variable**: `selectedID`
 - **Selected Category Variable**: `selectedCategory`
-- **Update Row**: `updateRow`
+- **Update Category**: `updateCategory`
 - **Result**: Three boards ("To Do", "In Progress", "Done") with cards showing task name as title and additional details below
 
 ### Field Layout Options
@@ -250,7 +250,6 @@ Result: All variations are mapped to your standardized categories
   - **Stacked**: Field labels above values (traditional layout)
   - **Inline**: Field labels and values side by side (compact layout)
 - **Board Width**: Auto-responsive or fixed width columns
-- **Board Order**: Control how boards are arranged
 - **Custom Categories**: Define your own board categories
   - **Use Custom Categories**: Toggle to enable custom category definition
   - **Category List**: Add, edit, and remove custom category names
@@ -258,18 +257,18 @@ Result: All variations are mapped to your standardized categories
 - **Card Sorting**: Sort cards within boards
   - **No Sorting**: Cards appear in data order
   - **Alphabetical**: Sort by card title or selected column
-  - **Custom Order**: Manual card ordering
+  - **Custom Order**: Planned
 - **Sort Column**: Choose which column to use for sorting (when sorting is enabled)
   - **Card Title**: Sort by the card's title field
   - **Specific Column**: Sort by any available data column (excludes category and ID columns)
 - **Sort Direction**: Ascending (A-Z, 1-9) or Descending (Z-A, 9-1)
 - **Visual Options**: Card counts, animations, empty board indicators
 
-## Drag & Drop Functionality
+## Writeback & Drag/Drop
 
 ### Requirements
 - Must use **Input Table** as data source
-- Enable **"Enable Drag & Drop"** toggle
+- Enable **"Enable Writeback"**
 - Configure **ID column** for row identification
 - Set up **variables** and **action triggers** in Sigma workbook
 
@@ -278,7 +277,7 @@ Result: All variations are mapped to your standardized categories
 2. Plugin sets variables:
    - **ID variable**: Set to the selected card's row ID
    - **Category variable**: Set to the target board name
-3. Plugin triggers the **updateRow action**
+3. Plugin triggers the **updateCategory** action
 4. **Optimistic Update**: Card immediately appears in new position
 5. Sigma workbook processes the action and updates the data
 6. Plugin refreshes to show updated data
@@ -293,20 +292,20 @@ The plugin uses optimistic updates to provide immediate visual feedback:
 ### Configuration Setup
 1. **ID Column**: Select the column containing unique row identifiers
 2. **Variables**: Create variables in your Sigma workbook:
-   - `id` variable: Will receive the row ID of the moved card
-   - `category` variable: Will receive the target board name
-3. **Action Trigger**: Create an action trigger named `updateRow` that:
-   - Uses the `id` and `category` variables
+   - `selectedID`: Will receive the row ID of the moved card
+   - `selectedCategory`: Will receive the target board name
+3. **Action Trigger**: Create an action trigger named `updateCategory` that:
+   - Uses the `selectedID` and `selectedCategory` variables
    - Updates the appropriate row in your input table
    - Refreshes the data source
 
 ### Example Sigma Workbook Setup
 ```javascript
 // In your Sigma workbook, create an action effect that:
-// 1. Gets the id variable value
-// 2. Gets the category variable value  
+// 1. Gets the selectedID variable value
+// 2. Gets the selectedCategory variable value
 // 3. Updates the row with the matching ID
-// 4. Sets the board/status column to the category value
+// 4. Sets the board/status column to the selectedCategory value
 // 5. Refreshes the data source
 ```
 
@@ -323,14 +322,13 @@ The plugin supports inline date editing in the detail view when properly configu
 ### How Date Editing Works
 1. **Detail View Only**: Date editing is only available in detail view mode
 2. **Conditional Display**: Date editing interface appears only when all requirements are met
-3. **Dual Variable Setting**: When either date is changed, both start and end date variables are set
-4. **Action Trigger**: `updateDates` action is triggered after setting both variables
-5. **Format Consistency**: Dates are automatically converted to ISO string format
+3. **Variable Setting**: When a date is changed, the corresponding variable is set; if both dates are provided, both variables are set
+4. **Action Trigger**: `updateDates` action is triggered after variables are set
+5. **Format Consistency**: Dates are converted to `YYYY-MM-DD` in your local timezone
 
 ### Date Editing Interface
 - **Prominent Section**: Date editing appears as a highlighted blue section at the top of card details
 - **Side-by-Side Pickers**: Start and end date pickers are displayed in a responsive grid layout
-- **Validation**: Update button is only enabled when both dates are selected
 - **Smart Field Hiding**: Date fields are hidden from normal card display when editing is enabled
 
 ### Configuration for Date Editing
@@ -339,14 +337,14 @@ The plugin supports inline date editing in the detail view when properly configu
    - `selectedStartDate` variable: Will receive the start date value
    - `selectedEndDate` variable: Will receive the end date value
 3. **Action Trigger**: Create an action trigger named `updateDates` that:
-   - Uses the `id`, `selectedStartDate`, and `selectedEndDate` variables
+   - Uses the `selectedID`, `selectedStartDate`, and `selectedEndDate` variables
    - Updates the appropriate row in your input table
    - Refreshes the data source
 
 ### Example Date Editing Setup
 ```javascript
 // In your Sigma workbook, create an action effect that:
-// 1. Gets the id variable value
+// 1. Gets the selectedID variable value
 // 2. Gets the selectedStartDate variable value
 // 3. Gets the selectedEndDate variable value
 // 4. Updates the row with the matching ID
@@ -436,3 +434,17 @@ Create a powerful dual-plugin experience:
 ```bash
 npm install
 ```
+
+### Run locally
+```bash
+npm start
+```
+
+This starts the development server. Load the built app into Sigma’s Plugin element via your hosting setup during development.
+
+### Build for production
+```bash
+npm run build
+```
+
+Outputs a production build in `build/` suitable for hosting and embedding as a Sigma plugin.
