@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/sigma-kanban/static/css/main.a3845696.css",
+    "main.js": "/sigma-kanban/static/js/main.d3e0e282.js",
+    "index.html": "/sigma-kanban/index.html",
+    "main.a3845696.css.map": "/sigma-kanban/static/css/main.a3845696.css.map",
+    "main.d3e0e282.js.map": "/sigma-kanban/static/js/main.d3e0e282.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a3845696.css",
+    "static/js/main.d3e0e282.js"
+  ]
+}
