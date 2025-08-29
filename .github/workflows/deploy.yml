@@ -1,0 +1,46 @@
+# Name of the workflow
+name: Deploy to GitHub Pages with Yarn
+
+# Run this workflow on pushes to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+
+# Give the workflow permissions to write to the repository
+permissions:
+  contents: write
+
+# Define the job that will run
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # Use the latest version of Ubuntu
+    steps:
+      # 1. Check out your repository's code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js for the build process
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24" # Specify your Node.js version
+          cache: "yarn" # Set the cache to use yarn
+
+      # 3. Install dependencies and build the app
+      - name: Install and Build
+        run: |
+          yarn install --frozen-lockfile
+          yarn run build
+        env:
+          # Dynamically set the public path using the repository name
+          # The ${{ github.event.repository.name }} variable is automatically
+          # provided by GitHub Actions and contains the name of the repo.
+          PUBLIC_URL: /${{ github.event.repository.name }}
+
+      # 4. Deploy the build folder to the gh-pages branch
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build # The directory to deploy
