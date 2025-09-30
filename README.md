@@ -2,6 +2,8 @@
 
 A flexible Sigma Computing plugin that creates interactive kanban boards from your data. Features drag-and-drop functionality, customizable card layouts, and an advanced settings system for easy configuration.
 
+![Sigma Kanban Board Plugin](public/images/sigma-kanban.png)
+
 ## Features
 
 - **Flexible Data Support**: Works with any data structure using column selection
